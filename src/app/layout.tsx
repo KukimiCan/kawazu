@@ -19,6 +19,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <meta name="google-site-verification" content="THAOk5rR43WaoxYMrz1rNm2jUrkkRvaBHSbJKo7fNj8" />
+      </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <BookProvider> {/* Providerで全体をラップ */}
           <Header />
