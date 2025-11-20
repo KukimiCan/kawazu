@@ -3,28 +3,29 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+    // 修正: 実際のAPI URLを AOZORA_API_URL から取得
+    const apiBaseUrl = process.env.AOZORA_API_URL; 
 
-    // 環境変数が設定されていない、または無効な場合の処理
     if (!apiBaseUrl) {
-      console.warn("NEXT_PUBLIC_API_URL が設定されていません。Vercelの環境変数を確認してください。");
+      console.warn("AOZORA_API_URL が設定されていません。Vercelの環境変数を確認してください。");
       return [];
     }
     
     let destinationUrl = apiBaseUrl;
     
-    // プロトコル（http:// または https://）が含まれているかチェックし、なければ安全のため 'https://' を追加
+    // プロトコルが含まれていない場合に 'https://' を追加（ビルドエラー解消のため）
     if (!destinationUrl.startsWith('http://') && !destinationUrl.startsWith('https://')) {
       destinationUrl = `https://${destinationUrl}`;
     }
 
-    // URLの末尾にスラッシュがあれば除去（Next.jsのリライトのパス結合で二重スラッシュになるのを避けるため）
+    // 末尾のスラッシュを削除
     const cleanedDestinationUrl = destinationUrl.endsWith('/') ? destinationUrl.slice(0, -1) : destinationUrl;
 
     return [
       {
+        // クライアントがリクエストするローカルプロキシパス
         source: '/api/aozora/:path*',
-        // プロトコルを含む修正されたURLを使用
+        // サーバー側でリライトされる実際の外部URL
         destination: `${cleanedDestinationUrl}/:path*`,
       },
     ];
