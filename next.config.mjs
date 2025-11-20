@@ -3,26 +3,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    // ユーザーが設定した環境変数から正しいAPIのベースURLを取得
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    // 環境変数が設定されていることを確認（設定されていない場合はエラーを避ける）
+    // 環境変数が設定されていない、または無効な場合の処理
     if (!apiBaseUrl) {
       console.warn("NEXT_PUBLIC_API_URL が設定されていません。Vercelの環境変数を確認してください。");
       return [];
     }
     
-    // URLの末尾にスラッシュがあれば除去（Next.jsのリライト動作のため）
-    const cleanedApiBaseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+    let destinationUrl = apiBaseUrl;
+    
+    // プロトコル（http:// または https://）が含まれているかチェックし、なければ安全のため 'https://' を追加
+    if (!destinationUrl.startsWith('http://') && !destinationUrl.startsWith('https://')) {
+      destinationUrl = `https://${destinationUrl}`;
+    }
+
+    // URLの末尾にスラッシュがあれば除去（Next.jsのリライトのパス結合で二重スラッシュになるのを避けるため）
+    const cleanedDestinationUrl = destinationUrl.endsWith('/') ? destinationUrl.slice(0, -1) : destinationUrl;
 
     return [
       {
-        // 修正: /api/aozora/以下のすべてのパスとクエリパラメータにマッチ
         source: '/api/aozora/:path*',
-        // 修正: NEXT_PUBLIC_API_URLに転送し、パスとクエリパラメータを引き継ぐ
-        destination: `${cleanedApiBaseUrl}/:path*`,
+        // プロトコルを含む修正されたURLを使用
+        destination: `${cleanedDestinationUrl}/:path*`,
       },
-      // 以前の 'bungomail' の設定は削除します
     ];
   },
 };
