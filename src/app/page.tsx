@@ -27,7 +27,13 @@ export default function Home() {
       const fetchedNovels: Book[] = [];
       const existingIds = new Set([...novels, ...likedBooks, ...favoriteBooks].map(b => b.id));
       while (fetchedNovels.length < count) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?num_chars=500`);
+        // NEXT_PUBLIC_API_URLが「/api/aozora」に設定されているため、
+        // 実行されるURLは「/api/aozora/search?num_chars=500」となり、CORSを回避
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        
+        // 修正: URLを /search から組み立てる (APIのベースURLが /api/aozora の場合)
+        const response = await fetch(`${apiUrl}/search?num_chars=500`); 
+        
         if (response.ok) {
           const data: ApiResponse = await response.json();
           const newBook: Book = { id: `${data.name}-${data.author}`, ...data };
