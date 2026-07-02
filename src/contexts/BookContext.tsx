@@ -3,10 +3,14 @@
 
 import {
   createContext,
+  Dispatch,
   useContext,
   useState,
   useEffect,
   ReactNode,
+  SetStateAction,
+  useCallback,
+  useMemo,
 } from "react";
 
 // アプリケーション全体で使うBookの型
@@ -20,76 +24,123 @@ export interface Book {
 
 // Contextが持つデータの型
 interface BookContextType {
+  queuedBooks: Book[];
   likedBooks: Book[];
   favoriteBooks: Book[];
+  setQueuedBooks: Dispatch<SetStateAction<Book[]>>;
   addLikedBook: (book: Book) => void;
   addFavoriteBook: (book: Book) => void;
   removeLikedBook: (bookId: string) => void;
+  removeFavoriteBook: (bookId: string) => void;
 }
 
-// Contextを作成
 const BookContext = createContext<BookContextType | undefined>(undefined);
 
-// Contextを提供するためのProviderコンポーネント
+function isBook(value: unknown): value is Book {
+  if (!value || typeof value !== "object") return false;
+
+  const maybeBook = value as Record<string, unknown>;
+  return (
+    typeof maybeBook.id === "string" &&
+    typeof maybeBook.name === "string" &&
+    typeof maybeBook.author === "string" &&
+    typeof maybeBook.content === "string" &&
+    typeof maybeBook.url === "string"
+  );
+}
+
+function readStoredBooks(key: string): Book[] {
+  const storedValue = localStorage.getItem(key);
+  if (!storedValue) return [];
+
+  const parsedValue: unknown = JSON.parse(storedValue);
+  if (!Array.isArray(parsedValue)) return [];
+
+  return parsedValue.filter(isBook);
+}
+
 export function BookProvider({ children }: { children: ReactNode }) {
+  const [queuedBooks, setQueuedBooks] = useState<Book[]>([]);
   const [likedBooks, setLikedBooks] = useState<Book[]>([]);
   const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // 初回ロード時にlocalStorageからデータを復元
   useEffect(() => {
     try {
-      const storedLiked = localStorage.getItem("likedBooks");
-      if (storedLiked) setLikedBooks(JSON.parse(storedLiked));
-      const storedFavorites = localStorage.getItem("favoriteBooks");
-      if (storedFavorites) setFavoriteBooks(JSON.parse(storedFavorites));
+      setLikedBooks(readStoredBooks("likedBooks"));
+      setFavoriteBooks(readStoredBooks("favoriteBooks"));
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
 
-  // likedBooksが更新されたらlocalStorageに保存
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("likedBooks", JSON.stringify(likedBooks));
-  }, [likedBooks]);
+  }, [isHydrated, likedBooks]);
 
-  // favoriteBooksが更新されたらlocalStorageに保存
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("favoriteBooks", JSON.stringify(favoriteBooks));
+  }, [isHydrated, favoriteBooks]);
+
+  const addLikedBook = useCallback((book: Book) => {
+    setLikedBooks((previousBooks) => {
+      if (
+        previousBooks.some((b) => b.id === book.id) ||
+        favoriteBooks.some((b) => b.id === book.id)
+      ) {
+        return previousBooks;
+      }
+
+      return [book, ...previousBooks];
+    });
   }, [favoriteBooks]);
 
-  const addLikedBook = (book: Book) => {
-    if (
-      !likedBooks.some((b) => b.id === book.id) &&
-      !favoriteBooks.some((b) => b.id === book.id)
-    ) {
-      setLikedBooks((prev) => [book, ...prev]);
-    }
-  };
+  const addFavoriteBook = useCallback((book: Book) => {
+    setFavoriteBooks((previousBooks) => {
+      if (previousBooks.some((b) => b.id === book.id)) {
+        return previousBooks;
+      }
 
-  const addFavoriteBook = (book: Book) => {
-    if (!favoriteBooks.some((b) => b.id === book.id)) {
-      setFavoriteBooks((prev) => [book, ...prev]);
-      // お気に入りに追加したら、興味ありリストからは削除する
-      setLikedBooks((prev) => prev.filter((b) => b.id !== book.id));
-    }
-  };
+      return [book, ...previousBooks];
+    });
+    setLikedBooks((prev) => prev.filter((b) => b.id !== book.id));
+  }, []);
 
-  const removeLikedBook = (bookId: string) => {
+  const removeLikedBook = useCallback((bookId: string) => {
     setLikedBooks((prev) => prev.filter((b) => b.id !== bookId));
-  };
+  }, []);
 
-  const value = {
+  const removeFavoriteBook = useCallback((bookId: string) => {
+    setFavoriteBooks((prev) => prev.filter((b) => b.id !== bookId));
+  }, []);
+
+  const value = useMemo(() => ({
+    queuedBooks,
     likedBooks,
     favoriteBooks,
+    setQueuedBooks,
     addLikedBook,
     addFavoriteBook,
     removeLikedBook,
-  };
+    removeFavoriteBook,
+  }), [
+    queuedBooks,
+    likedBooks,
+    favoriteBooks,
+    setQueuedBooks,
+    addLikedBook,
+    addFavoriteBook,
+    removeLikedBook,
+    removeFavoriteBook,
+  ]);
 
   return <BookContext.Provider value={value}>{children}</BookContext.Provider>;
 }
 
-// Contextを簡単に使うためのカスタムフック
 export function useBooks() {
   const context = useContext(BookContext);
   if (context === undefined) {

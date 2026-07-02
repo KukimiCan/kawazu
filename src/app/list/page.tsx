@@ -7,50 +7,87 @@ import Link from 'next/link';
 
 export default function ListPage() {
   const [activeTab, setActiveTab] = useState<'liked' | 'favorites'>('liked');
-  const { likedBooks, favoriteBooks, addFavoriteBook } = useBooks();
+  const { likedBooks, favoriteBooks, addFavoriteBook, removeLikedBook, removeFavoriteBook } = useBooks();
   
-  const tabStyle = "px-6 py-2 text-sm font-medium rounded-t-lg";
-  const activeTabStyle = "bg-white text-gray-900 border-b-2 border-blue-500";
-  const inactiveTabStyle = "bg-gray-100 text-gray-500 hover:bg-gray-200";
+  const tabStyle = "relative px-1 pb-3 text-sm transition-colors";
+  const activeTabStyle = "text-[var(--foreground)] after:absolute after:left-0 after:bottom-0 after:h-px after:w-full after:bg-[var(--foreground)]";
+  const inactiveTabStyle = "text-[var(--muted)] hover:text-[var(--foreground)]";
 
   const booksToDisplay = activeTab === 'liked' ? likedBooks : favoriteBooks;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
-      {/* タブ切り替え */}
-      <div className="flex border-b border-gray-200">
-        <button onClick={() => setActiveTab('liked')} className={`${tabStyle} ${activeTab === 'liked' ? activeTabStyle : inactiveTabStyle}`}>
-          興味あり ({likedBooks.length})
-        </button>
-        <button onClick={() => setActiveTab('favorites')} className={`${tabStyle} ${activeTab === 'favorites' ? activeTabStyle : inactiveTabStyle}`}>
-          お気に入り ({favoriteBooks.length})
-        </button>
+    <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
+      <div className="mb-10 flex items-end justify-between border-b border-[var(--line)]">
+        <div className="flex gap-8">
+          <button
+            type="button"
+            onClick={() => setActiveTab('liked')}
+            className={`${tabStyle} ${activeTab === 'liked' ? activeTabStyle : inactiveTabStyle}`}
+            aria-pressed={activeTab === 'liked'}
+          >
+            栞 <span className="ml-1 text-xs text-[var(--muted)]">{likedBooks.length}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('favorites')}
+            className={`${tabStyle} ${activeTab === 'favorites' ? activeTabStyle : inactiveTabStyle}`}
+            aria-pressed={activeTab === 'favorites'}
+          >
+            本棚 <span className="ml-1 text-xs text-[var(--muted)]">{favoriteBooks.length}</span>
+          </button>
+        </div>
       </div>
       
-      {/* リスト表示 */}
-      <div className="mt-6">
+      <div>
         {booksToDisplay.length === 0 ? (
-          <p className="text-center text-gray-500 mt-12">このリストにはまだ作品がありません。</p>
+          <div className="mt-20 text-center text-[var(--muted)]">
+            <p className="text-sm">まだ何も残っていません。</p>
+            <p className="mt-3 text-xs">一篇を右へ送ると、栞としてここに残ります。</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="divide-y divide-[var(--line)]">
             {booksToDisplay.map((book) => (
-              <div key={book.id} className="bg-white rounded-lg shadow-md p-5 flex flex-col">
-                <h3 className="text-lg font-bold text-gray-900">{book.name}</h3>
-                <p className="text-sm text-gray-600 mb-3">{book.author}</p>
-                <p className="text-sm text-gray-700 leading-relaxed flex-grow">
-                  {book.content.substring(0, 50)}…
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href={book.url} target="_blank" rel="noopener noreferrer" className="text-sm bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 transition-colors">
-                    本文を読む
-                  </Link>
+              <article key={book.id} className="group py-7">
+                <div className="flex items-start justify-between gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium leading-snug text-[var(--foreground)]">{book.name}</h3>
+                    <p className="mt-1 text-sm text-[var(--muted)]">{book.author}</p>
+                  </div>
                   {activeTab === 'liked' && (
-                    <button onClick={() => addFavoriteBook(book)} className="text-sm bg-yellow-400 text-white px-3 py-1 rounded-md hover:bg-yellow-500 transition-colors">
-                      お気に入り
+                    <button
+                      type="button"
+                      onClick={() => addFavoriteBook(book)}
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
+                      aria-label={`${book.name}を本棚に移す`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5h3.5v13H5zM10.25 4.5h3.5v14h-3.5zM15.5 6.5H19v12h-3.5z" />
+                        <path strokeLinecap="round" d="M4.5 18.5h15" />
+                      </svg>
                     </button>
                   )}
                 </div>
-              </div>
+                <p className="mt-4 line-clamp-3 text-sm leading-7 text-[var(--muted)]">
+                  {book.content}
+                </p>
+                <div className="mt-5 flex items-center gap-5 text-sm">
+                  <Link
+                    href={book.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--foreground)] underline decoration-[var(--line)] underline-offset-4 transition-colors hover:decoration-[var(--foreground)]"
+                  >
+                    本文を読む
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => activeTab === 'liked' ? removeLikedBook(book.id) : removeFavoriteBook(book.id)}
+                    className="text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                  >
+                    削除
+                  </button>
+                </div>
+              </article>
             ))}
           </div>
         )}

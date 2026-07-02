@@ -1,26 +1,204 @@
+@import url("https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@400;500&family=Klee+One:wght@400;600&family=Noto+Serif+JP:wght@400;500&family=Shippori+Mincho:wght@400;500&family=Zen+Kurenaido&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f7f4;
+  --surface: #fffffc;
+  --surface-soft: #f0f0ec;
+  --foreground: #1f2420;
+  --muted: #73766f;
+  --line: #deded7;
+  --shadow-soft: none;
+  --font-body: "Klee One", Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: "Courier New", Courier, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html[data-font="system"] {
+  --font-body: Arial, Helvetica, sans-serif;
+}
+
+html[data-font="klee"] {
+  --font-body: "Klee One", Arial, Helvetica, sans-serif;
+}
+
+html[data-font="shippori"] {
+  --font-body: "Shippori Mincho", "Noto Serif JP", serif;
+}
+
+html[data-font="zen"] {
+  --font-body: "Zen Kurenaido", "Klee One", sans-serif;
+}
+
+html[data-font="kaisei"] {
+  --font-body: "Kaisei Tokumin", "Noto Serif JP", serif;
+}
+
+html[data-font="notoSerif"] {
+  --font-body: "Noto Serif JP", serif;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  font-feature-settings: "palt" 1;
+  letter-spacing: 0;
+  text-rendering: optimizeLegibility;
+}
+
+.hidden-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hidden-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.novel-scroll-window {
+  height: 100%;
+}
+
+.card-stage {
+  --visible-lines: 12.5;
+  --line-height: 2rem;
+  --card-vertical-padding: 4.25rem;
+  height: min(
+    calc(var(--visible-lines) * var(--line-height) + var(--card-vertical-padding)),
+    calc(100vh - 12rem)
+  );
+  perspective: 1200px;
+}
+
+@media (min-width: 640px) {
+  .card-stage {
+    --visible-lines: 17.5;
+  }
+}
+
+.reading-pane {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.paper-shadow {
+  box-shadow: var(--shadow-soft);
+}
+
+.character-text {
+  line-break: strict;
+  overflow-wrap: break-word;
+  word-break: normal;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.character-text.is-entering .text-segment {
+  animation: text-segment-enter var(--text-enter-duration) cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: var(--text-enter-delay);
+}
+
+.character-text.is-leaving-right .text-segment,
+.character-text.is-leaving-left .text-segment {
+  animation-duration: var(--text-exit-duration);
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 0.72, 0.18, 1);
+  animation-delay: var(--text-exit-delay);
+  will-change: transform, opacity;
+}
+
+.character-text.is-leaving-right .text-segment {
+  animation-name: text-segment-leave-right;
+}
+
+.character-text.is-leaving-left .text-segment {
+  animation-name: text-segment-leave-left;
+}
+
+@keyframes text-segment-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-0.35rem, -0.55rem, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes text-segment-leave-right {
+  to {
+    opacity: 0;
+    transform: translate3d(var(--text-exit-x), var(--text-exit-y), 0);
+  }
+}
+
+@keyframes text-segment-leave-left {
+  to {
+    opacity: 0;
+    transform: translate3d(calc(var(--text-exit-x) * -1), var(--text-exit-y), 0);
+  }
+}
+
+.breath-loader {
+  display: inline-grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+}
+
+.breath-loader::before,
+.breath-loader::after {
+  grid-area: 1 / 1;
+  content: "";
+  border-radius: 9999px;
+  border: 1px solid rgb(31 36 32 / 0.22);
+  animation: breathe 2.6s ease-in-out infinite;
+}
+
+.breath-loader::before {
+  width: 0.65rem;
+  height: 0.65rem;
+  background: rgb(31 36 32 / 0.58);
+}
+
+.breath-loader::after {
+  width: 2rem;
+  height: 2rem;
+  animation-delay: 0.35s;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.28;
+    transform: scale(0.82);
+  }
+
+  50% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

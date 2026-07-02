@@ -1,15 +1,13 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { BookProvider } from "@/contexts/BookContext"; // Import
-import Header from "@/components/Header"; // Import
-
-const inter = Inter({ subsets: ["latin"] });
+import { BookProvider } from "@/contexts/BookContext";
+import { DisplayProvider } from "@/contexts/DisplayContext";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
-  title: "200文字の空",
-  description: "200文字の井の中から青空を眺めます．",
+  title: "kawazu",
+  description: "先入観から離れて、新しい作品と出会うための読書アプリ。",
 };
 
 export default function RootLayout({
@@ -22,13 +20,15 @@ export default function RootLayout({
       <head>
         <meta name="google-site-verification" content="THAOk5rR43WaoxYMrz1rNm2jUrkkRvaBHSbJKo7fNj8" />
       </head>
-      <body className={inter.className} suppressHydrationWarning={true}>
-        <BookProvider> {/* Providerで全体をラップ */}
-          <Header />
-          <main className="pt-20"> {/* ヘッダーの高さ分だけpaddingを確保 */}
-            {children}
-          </main>
-        </BookProvider>
+      <body suppressHydrationWarning={true}>
+        <DisplayProvider>
+          <BookProvider>
+            <Header />
+            <main className="pt-20">
+              {children}
+            </main>
+          </BookProvider>
+        </DisplayProvider>
       </body>
     </html>
   );

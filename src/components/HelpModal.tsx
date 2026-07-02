@@ -1,5 +1,5 @@
 // src/components/HelpModal.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -7,42 +7,81 @@ interface HelpModalProps {
 }
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600/50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 m-4 max-w-md w-full relative">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">使用方法</h2>
-        <p className="mb-3 text-gray-700">
-          青空文庫の膨大な作品群から、あなたにおすすめの小説を見つけるお手伝いをします。
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(31_36_32_/_0.22)] px-4 backdrop-blur-[2px]"
+      onMouseDown={onClose}
+    >
+      <div
+        className="relative max-h-[min(80vh,720px)] w-full max-w-md overflow-y-auto rounded-[3px] border border-[var(--line)] bg-[var(--surface)] p-8 paper-shadow"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="help-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <h2 id="help-modal-title" className="text-xl font-medium text-[var(--foreground)]">作法</h2>
+        <p className="mt-5 text-sm leading-8 text-[var(--muted)]">
+          題も作者も見ず、ただ冒頭だけを読む。
+          残したいものは右へ。流したいものは左へ。
         </p>
-        <ul className="list-disc pl-5 mb-4 text-gray-700">
-          <li className="mb-2">
-            <span className="font-semibold">小説を読む:</span> カードに表示された小説の冒頭を読みます。
+        <ul className="mt-7 space-y-5 text-sm text-[var(--foreground)]">
+          <li className="flex gap-4">
+            <span className="mt-1 text-[var(--muted)]" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" d="M7 17L17 7" />
+              </svg>
+            </span>
+            <span className="leading-7">左へ送ると、次の作品へ移ります。</span>
           </li>
-          <li className="mb-2">
-            <span className="font-semibold">左右にスワイプ:</span>
-            <ul className="list-circle pl-4 text-sm">
-              <li><span className="font-bold">右にスワイプ</span> または <span className="font-bold">「❤」ボタン</span> / <span className="font-bold">右矢印キー</span>: 興味がある作品です。あなたの「興味あり」リストに追加されます。</li>
-              <li><span className="font-bold">左にスワイプ</span> または <span className="font-bold">「✖」ボタン</span> / <span className="font-bold">左矢印キー</span>: 興味がない作品です。次の作品が表示されます。</li>
-            </ul>
+          <li className="flex gap-4">
+            <span className="mt-1 text-[var(--muted)]" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 4.5h8a1 1 0 011 1v14l-5-3-5 3v-14a1 1 0 011-1z" />
+              </svg>
+            </span>
+            <span className="leading-7">右へ送ると、栞として思い出す場所に残ります。</span>
           </li>
-          <li className="mb-2">
-            <span className="font-semibold">「興味あり」リスト:</span> ナビゲーションバーの「思い出す」をクリックすると、あなたが興味をもった作品を一覧で見ることができます。全文へのリンクもあります．
+          <li className="flex gap-4">
+            <span className="mt-1 text-[var(--muted)]" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5h3.5v13H5zM10.25 4.5h3.5v14h-3.5zM15.5 6.5H19v12h-3.5z" />
+                <path strokeLinecap="round" d="M4.5 18.5h15" />
+              </svg>
+            </span>
+            <span className="leading-7">思い出す場所では、栞を本棚へ移せます。</span>
           </li>
-          <li className="mb-2">
-            <span className="font-semibold">「お気に入り」リスト:</span> 「興味あり」リストから、特に気に入った作品を「お気に入り」に登録できます。
+          <li className="flex gap-4">
+            <span className="mt-1 text-[var(--muted)]" aria-hidden="true">字</span>
+            <span className="leading-7">右上の「字」から書体を選べます。</span>
           </li>
         </ul>
-        <p className="text-gray-700">
-          よき出会いを．
+        <p className="mt-8 text-sm text-[var(--muted)]">
+          よき出会いを。
         </p>
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
           aria-label="閉じる"
         >
-          &times;
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" d="M7 17L17 7" />
+          </svg>
         </button>
       </div>
     </div>
