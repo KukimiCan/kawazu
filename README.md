@@ -1,46 +1,65 @@
 # kawazu
 
-青空文庫の作品と偶然に出会うための小さな Next.js アプリです。
-カードに表示された作品の冒頭を読み、左右スワイプまたはボタンで「興味あり」を保存できます。
+青空文庫の作品と偶然に出会うための小さなNext.jsアプリです。題名や作者を見る前に冒頭を読み、気になった作品に栞をはさみます。
 
-API は [KukimiCan/aozora_api](https://github.com/KukimiCan/aozora_api) の `/search` エンドポイントを使います。
+## できること
+
+- 左右のスワイプ、ボタン、← → キーで作品を送る
+- 直前の選択を「ひとつ戻る」で取り消す
+- 栞・本棚に保存し、作品名や作者名で検索する
+- 保存一覧から冒頭を読み返し、青空文庫の本文を開く
+- 栞と本棚を移動する、削除を取り消す
+- 6種類の書体と3段階の文字サイズを選ぶ
+
+冒頭の最初の1件を優先して表示し、その後の作品を背景で補充します。縦スクロール、入力欄、ダイアログ操作で誤って作品が進まないようにしています。
 
 ## セットアップ
 
+Node.js 22.18以降（24推奨）、Yarn 1.22を使ってください。
+
 ```bash
-npm install
+yarn install --frozen-lockfile
 cp .env.example .env.local
-npm run dev
+yarn dev
 ```
 
-`.env.local` の `AOZORA_API_URL` には `aozora_api` の公開 URL を指定します。
-末尾のスラッシュはあってもなくても動きます。
-
 ```env
-AOZORA_API_URL=https://your-aozora-api.example.com
+AOZORA_API_URL=http://localhost:8000
 NEXT_PUBLIC_SITE_URL=https://your-kawazu-app.example.com
 ```
 
-## API
+`AOZORA_API_URL` はサーバー側のURLです。末尾スラッシュはあってもなくても動きます。ブラウザからは `/api/aozora/*` を呼び、Next.jsのrewriteで転送します。
 
-フロントエンドは `/api/aozora/search?num_chars=500` を呼びます。
-Next.js の rewrites により、サーバー側で `AOZORA_API_URL/search?num_chars=500` に転送されます。
+バックエンドは [KukimiCan/aozora_api](https://github.com/KukimiCan/aozora_api) を起動してください。設定がないと作品を取得できません。デモ作品への置き換えは行いません。
 
-期待するレスポンス:
+## APIとの接続
 
-```json
-{
-  "name": "作品名",
-  "author": "著者名",
-  "content": "冒頭文...",
-  "url": "https://www.aozora.gr.jp/..."
-}
-```
+- `/search?num_chars=500`：最初の1作品
+- `/search/batch?count=3&num_chars=500`：次の作品をまとめて取得
+- batchが未対応（404/405）の旧APIでは、そのセッション中は単件取得に切り替えます。
+- タイムアウト、503、不正なデータの場合は自動の大量再試行をせず、画面から再試行できます。
 
-## コマンド
+レスポンスは `name`, `author`, `content`, `url` の4フィールドを持つオブジェクトです。一括取得はその配列で、要求件数未満の場合もあります。
+
+## 保存データ
+
+栞と本棚はこのブラウザ内のlocalStorageに保存します。クラウド同期はありません。
+
+旧版の `likedBooks` / `favoriteBooks` を初回に読み取り、作品URLをHTTPSに正規化して重複を除きます。新しい保存キー `kawazuLibrary.v1` に両方の一覧を一度に書くことで、移動時に片方だけ保存される問題を防ぎます。旧キーは削除・更新しません。
+
+旧版へ戻すと旧キー時点の一覧が表示され、新版での変更は反映されません。再び新版へ戻れば新キーを読みます。移行を戻したい場合は、新キーの内容を確認してから扱ってください。
+
+読み取りエラーや容量不足を画面に通知し、読み取れなかった保存データを空の配列で上書きしません。書体の既存キー `kawazuFont` も引き継ぎます。
+
+## 検証
 
 ```bash
-npm run lint
-npm run build
-npm start
+yarn test
+yarn lint
+yarn typecheck
+yarn build
 ```
+
+テストは外部通信を模擬し、旧データの移行、保存容量不足、取り消し、URL検証、検索、スワイプ判定、API互換性を確認します。実ブラウザでの表示・操作確認は別途必要です。
+
+[改善計画](docs/improvement-plan.md) に調査結果、優先度、対象範囲をまとめています。

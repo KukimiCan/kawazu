@@ -20,11 +20,11 @@ export default function RootLayout({
       <head>
         <meta name="google-site-verification" content="THAOk5rR43WaoxYMrz1rNm2jUrkkRvaBHSbJKo7fNj8" />
       </head>
-      <body suppressHydrationWarning={true}>
+      <body>
         <DisplayProvider>
           <BookProvider>
             <Header />
-            <main className="pt-20">
+            <main id="main-content" tabIndex={-1}>
               {children}
             </main>
           </BookProvider>
