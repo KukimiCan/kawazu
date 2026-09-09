@@ -67,27 +67,26 @@ export default function Home() {
   };
 
   return <div className="encounter">
-    <div className="encounter-heading"><h1>まずは、冒頭から。</h1><p>題名と作者は、栞をはさんだあとで。</p></div>
+    <h1 className="sr-only">作品との出会い</h1>
     <section className="reader-sheet" aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
       onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
-      <div className="reader-eyebrow"><span>青空文庫</span><span>ある作品の、はじまり</span></div>
       {current ? <div className="reader-scroll" tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
         <p className="reading-text reader-copy">{current.content}</p>
-        <p className="excerpt-end">冒頭はここまで</p>
+        <span className="excerpt-end" aria-hidden="true" />
       </div> : error ? <div className="reader-state" role="alert">
-        <h2>一篇を、読み込めませんでした。</h2><p>{error}</p>
+        <h2>読み込めませんでした</h2><p>{error}</p>
         <button type="button" className="primary-button" onClick={() => void refill()} disabled={isFetching}>{isFetching ? '探しています…' : 'もう一度探す'}</button>
       </div> : <div className="reader-state" role="status">
-        <span className="loading-line" aria-hidden="true" /><h2>一篇を探しています</h2><p>初回は少し時間がかかることがあります。</p>
+        <span className="loading-line" aria-hidden="true" /><span className="sr-only">作品を読み込んでいます</span>
       </div>}
     </section>
     <div className="reader-controls">
       <div className="choice-buttons">
-        <button type="button" className="secondary-button" onClick={() => choose(false)} disabled={!current}><span aria-hidden="true">←</span> 次の作品へ</button>
-        <button type="button" className="primary-button" onClick={() => choose(true)} disabled={!current}>栞をはさむ <span aria-hidden="true">→</span></button>
+        <button type="button" className="secondary-button" onClick={() => choose(false)} disabled={!current}>次の一篇</button>
+        <button type="button" className="primary-button" onClick={() => choose(true)} disabled={!current}><svg className="bookmark-mark" width="12" height="18" viewBox="0 0 12 18" fill="none" aria-hidden="true"><path d="M2 1.5h8v14l-4-3-4 3z" stroke="currentColor" /></svg>栞をはさむ</button>
       </div>
-      <div className="reader-secondary"><button type="button" className="text-button undo-button" onClick={undo} disabled={!lastChoice}>↶ ひとつ戻る</button><span className="gesture-hint">左右にスワイプ・← → キーでも</span></div>
-      <div className="reader-feedback" role="status" aria-live="polite">{message}{message === '栞をはさみました。' && <Link href="/list">作品を見る ↗</Link>}</div>
+      <div className="reader-secondary"><button type="button" className="text-button undo-button" onClick={undo} disabled={!lastChoice}>戻る</button></div>
+      <div className="reader-feedback" role="status" aria-live="polite"><span className="sr-only">{message}</span>{message === '栞をはさみました。' && <Link href="/list">栞を見る</Link>}</div>
       {error && current && <p className="refill-error" role="status">次の作品の準備ができませんでした。<button type="button" className="text-button" disabled={isFetching} onClick={() => void refill()}>再試行</button></p>}
     </div>
   </div>;
