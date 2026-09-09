@@ -22,7 +22,7 @@ export default function ListPage() {
     setLastChange(null);
   };
   return <div className="library-page">
-    <div className="library-heading"><div><p className="eyebrow">あなたの読書録</p><h1>思い出す</h1></div><Link className="text-button" href="/">一篇と出会う ↗</Link></div>
+    <div className="library-heading"><h1>残した一篇</h1></div>
     <div className="library-toolbar">
       <div className="shelf-tabs" role="group" aria-label="保存先">
         <button type="button" aria-pressed={activeTab === 'liked'} onClick={() => setActiveTab('liked')}>栞 <span>{likedBooks.length}</span></button>
@@ -30,12 +30,10 @@ export default function ListPage() {
       </div>
       <label className="search-field"><span className="sr-only">作品名・作者で検索</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="作品名・作者で検索" /></label>
     </div>
-    <p className="shelf-description">{activeTab === 'liked' ? '冒頭が気になった作品。続きを読むなら、ここから。' : '栞の中から選んだ、手元に残しておきたい作品。'}</p>
     {lastChange && <div className="undo-notice" role="status"><span>{lastChange.message}</span><button type="button" className="text-button" onClick={undo}>取り消す</button></div>}
     {!isHydrated ? <p className="empty-state" role="status">保存した作品を読み込んでいます。</p> : filtered.length === 0 ?
       <div className="empty-state">
-        <h2>{query.trim() ? '見つかりませんでした' : activeTab === 'liked' ? '気になる一篇に、栞を。' : '本棚は、まだ空です。'}</h2>
-        <p>{query.trim() ? '別の作品名や作者名で探してみてください。' : activeTab === 'liked' ? '冒頭を読んで栞をはさむと、ここに作品が残ります。' : '栞の作品から「本棚に移す」を選ぶと、ここに残ります。'}</p>
+        <h2>{query.trim() ? '見つかりませんでした' : 'まだ、ありません'}</h2>
         {query.trim() ? <button className="secondary-button" onClick={() => setQuery('')}>検索をクリア</button> : activeTab === 'liked' ? <Link className="primary-button" href="/">一篇と出会う</Link> : <button className="secondary-button" onClick={() => setActiveTab('liked')}>栞を見る</button>}
       </div> : <>
         <p className="result-count" role="status">{filtered.length} 作品{query.trim() && ` / ${books.length} 作品中`}</p>
@@ -50,6 +48,5 @@ export default function ListPage() {
           </div>
         </article>)}</div>
       </>}
-    <p className="library-footer">栞と本棚は、このブラウザに保存されます。<br />別の端末との同期はありません。</p>
   </div>;
 }

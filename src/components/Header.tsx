@@ -18,10 +18,10 @@ export default function Header() {
     <a className="skip-link" href="#main-content">本文へ移動</a>
     <header className="site-header">
       <nav className="header-inner" aria-label="メインナビゲーション">
-        <Link href="/" className="wordmark" aria-label="kawazu ホーム">kawazu<span aria-hidden="true">.</span></Link>
+        <Link href="/" className="wordmark" aria-label="kawazu ホーム">kawazu</Link>
         <div className="main-links">
           <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}>出会う</Link>
-          <Link href="/list" aria-current={pathname === '/list' ? 'page' : undefined}>思い出す{count > 0 && <span className="nav-count">{count}</span>}</Link>
+          <Link href="/list" aria-current={pathname === '/list' ? 'page' : undefined}>栞{count > 0 && <span className="nav-count">{count}</span>}</Link>
         </div>
         <div className="header-tools">
           <button className="icon-button font-button" type="button" aria-label="文字の設定" aria-haspopup="dialog" onClick={() => setPanel('display')}>字</button>
@@ -40,7 +40,7 @@ export default function Header() {
         {([['small', '小さめ'], ['medium', '標準'], ['large', '大きめ']] as [TextSize, string][]).map(([value, label]) =>
           <label key={value}><input type="radio" name="text-size" checked={textSize === value} onChange={() => setTextSize(value)} /><span>{label}</span></label>)}
       </fieldset>
-      <p className="font-preview reading-text">気になる一文に、栞をはさむ。<br />今日の一篇を、ゆっくりと。</p>
+      <p className="font-preview reading-text">気になる一文に、栞をはさむ。</p>
       {preferenceError && <p className="storage-note" role="status">設定はこの画面に反映されますが、次回のために保存できませんでした。</p>}
     </Dialog>
   </>;
