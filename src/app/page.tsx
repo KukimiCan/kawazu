@@ -17,27 +17,53 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const pointer = useRef<{ x: number; y: number; id: number } | null>(null);
   const choiceLock = useRef(false);
+  const reader = useRef<HTMLDivElement>(null);
+  const departure = useRef<Animation | null>(null);
+  const [turnDirection, setTurnDirection] = useState<'forward' | 'back'>('forward');
   const current = queuedBooks[0] ?? null;
 
   useEffect(() => { choiceLock.current = false; }, [current?.id]);
+  useEffect(() => () => { departure.current?.cancel(); }, []);
+
+  const turnPage = useCallback(async (direction: 'forward' | 'back', commit: () => void) => {
+    if (choiceLock.current) return;
+    choiceLock.current = true;
+    setTurnDirection(direction);
+    if (reader.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const offset = direction === 'forward' ? -16 : 16;
+      const animation = reader.current.animate([
+        { opacity: 1, transform: 'translateX(0)' },
+        { opacity: 0, transform: `translateX(${offset}px)` },
+      ], { duration: 150, easing: 'ease-in', fill: 'forwards' });
+      departure.current = animation;
+      try { await animation.finished; } catch { choiceLock.current = false; return; }
+    }
+    commit();
+    departure.current?.cancel();
+    departure.current = null;
+    choiceLock.current = false;
+  }, []);
 
   const choose = useCallback((save: boolean) => {
     if (!current || choiceLock.current) return;
-    choiceLock.current = true;
+    void turnPage('forward', () => {
     const previousShelf = favoriteBooks.some((book) => book.id === current.id) ? 'favorites'
       : likedBooks.some((book) => book.id === current.id) ? 'liked' : null;
     if (save && !previousShelf) placeOnShelf(current, 'liked');
     setLastChoice({ book: current, saved: save, previousShelf });
     setQueuedBooks((previous) => previous.filter((book) => book.id !== current.id));
     setMessage(save ? '栞をはさみました。' : '次の作品へ進みました。');
-  }, [current, favoriteBooks, likedBooks, placeOnShelf, setQueuedBooks]);
+    });
+  }, [current, favoriteBooks, likedBooks, placeOnShelf, setQueuedBooks, turnPage]);
 
   const undo = () => {
     if (!lastChoice) return;
+    void turnPage('back', () => {
     if (lastChoice.saved) placeOnShelf(lastChoice.book, lastChoice.previousShelf);
     setQueuedBooks((previous) => [lastChoice.book, ...previous.filter((book) => book.id !== lastChoice.book.id)]);
     setLastChoice(null);
     setMessage('ひとつ前の作品に戻りました。');
+    });
   };
 
   useEffect(() => {
@@ -68,11 +94,12 @@ export default function Home() {
 
   return <div className="encounter">
     <h1 className="sr-only">作品との出会い</h1>
-    <section className="reader-sheet" aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
+    <section className="reader-sheet" data-turn={turnDirection} aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
       onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
-      {current ? <div className="reader-scroll" tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
+      <span className="paper-binding" aria-hidden="true"><i /><i /><i /></span>
+      {current ? <div className="reader-scroll" ref={reader} tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
         <p className="reading-text reader-copy">{current.content}</p>
-        <span className="excerpt-end" aria-hidden="true" />
+        <svg className="excerpt-end" width="46" height="18" viewBox="0 0 46 18" fill="none" aria-hidden="true"><path d="M2 11c7-8 13-8 20 0s13 8 22 0M8 11c5-4 9-4 14 0s9 4 16 0" stroke="currentColor" strokeWidth=".8" /></svg>
       </div> : error ? <div className="reader-state" role="alert">
         <h2>読み込めませんでした</h2><p>{error}</p>
         <button type="button" className="primary-button" onClick={() => void refill()} disabled={isFetching}>{isFetching ? '探しています…' : 'もう一度探す'}</button>
