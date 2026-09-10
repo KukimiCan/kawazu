@@ -30,7 +30,10 @@ test('search handles Japanese spaces and combinations of author and title', () =
 });
 test('vertical and short gestures never choose a work', () => {
   assert.equal(swipeDirection(100, 200), null);
-  assert.equal(swipeDirection(79, 0), null);
+    assert.equal(swipeDirection(55, 0), null);
+    assert.equal(swipeDirection(56, 10), 'right');
+    assert.equal(swipeDirection(-56, 10), 'left');
+    assert.equal(swipeDirection(56, 40), null);
   assert.equal(swipeDirection(90, 70), null);
   assert.equal(swipeDirection(100, 10), 'right');
   assert.equal(swipeDirection(-100, -10), 'left');

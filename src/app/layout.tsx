@@ -1,9 +1,11 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { BookProvider } from "@/contexts/BookContext";
 import { DisplayProvider } from "@/contexts/DisplayContext";
 import Header from "@/components/Header";
+
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export const metadata: Metadata = {
   title: "kawazu",

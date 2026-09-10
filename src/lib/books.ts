@@ -90,7 +90,7 @@ export function searchBooks(books: Book[], query: string): Book[] {
 }
 
 export function swipeDirection(dx: number, dy: number): 'left' | 'right' | null {
-  return Math.abs(dx) >= 80 && Math.abs(dx) > Math.abs(dy) * 1.5
+  return Math.abs(dx) >= 56 && Math.abs(dx) > Math.abs(dy) * 1.5
     ? dx > 0 ? 'right' : 'left'
     : null;
 }

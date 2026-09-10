@@ -15,7 +15,8 @@ export default function Home() {
   const { isFetching, error, refill } = useNovelQueue();
   const [lastChoice, setLastChoice] = useState<{ book: Book; saved: boolean; previousShelf: Shelf | null } | null>(null);
   const [message, setMessage] = useState('');
-  const pointer = useRef<{ x: number; y: number; id: number } | null>(null);
+  const pointer = useRef<{ x: number; y: number; id: number; horizontal: boolean } | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
   const choiceLock = useRef(false);
   const reader = useRef<HTMLDivElement>(null);
   const departure = useRef<Animation | null>(null);
@@ -46,7 +47,7 @@ export default function Home() {
 
   const choose = useCallback((save: boolean) => {
     if (!current || choiceLock.current) return;
-    void turnPage('forward', () => {
+    void turnPage(save ? 'back' : 'forward', () => {
     const previousShelf = favoriteBooks.some((book) => book.id === current.id) ? 'favorites'
       : likedBooks.some((book) => book.id === current.id) ? 'liked' : null;
     if (save && !previousShelf) placeOnShelf(current, 'liked');
@@ -81,12 +82,31 @@ export default function Home() {
 
   const pointerDown = (event: PointerEvent<HTMLElement>) => {
     pointer.current = null;
-    if (!event.isPrimary || event.button !== 0 || isInteractiveTarget(event.target)) return;
-    pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    if (!current || choiceLock.current || !event.isPrimary || event.button !== 0 || isInteractiveTarget(event.target)) return;
+    pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId, horizontal: false };
+  };
+  const resetDrag = () => {
+    pointer.current = null;
+    setDragOffset(0);
+  };
+  const pointerMove = (event: PointerEvent<HTMLElement>) => {
+    const start = pointer.current;
+    if (!start || start.id !== event.pointerId) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (!start.horizontal) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) >= Math.abs(dx)) { resetDrag(); return; }
+      if (Math.abs(dx) < 10 || Math.abs(dx) <= Math.abs(dy) * 1.5) return;
+      if (window.getSelection()?.toString()) { resetDrag(); return; }
+      start.horizontal = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    setDragOffset(Math.max(-96, Math.min(96, dx)));
   };
   const pointerUp = (event: PointerEvent<HTMLElement>) => {
     const start = pointer.current;
-    pointer.current = null;
+    resetDrag();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
     if (!start || start.id !== event.pointerId || window.getSelection()?.toString()) return;
     const direction = swipeDirection(event.clientX - start.x, event.clientY - start.y);
     if (direction) choose(direction === 'right');
@@ -94,10 +114,10 @@ export default function Home() {
 
   return <div className="encounter">
     <h1 className="sr-only">作品との出会い</h1>
-    <section className="reader-sheet" data-turn={turnDirection} aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
-      onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
+    <section className="reader-sheet" data-turn={turnDirection} data-dragging={dragOffset !== 0 || undefined} aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
+      onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={resetDrag} onLostPointerCapture={resetDrag}>
       <span className="paper-binding" aria-hidden="true"><i /><i /><i /></span>
-      {current ? <div className="reader-scroll" ref={reader} tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
+      {current ? <div className="reader-scroll" ref={reader} tabIndex={0} key={current.id} style={{ translate: `${dragOffset / 4}px 0` }} aria-label="冒頭文。上下にスクロールできます">
         <p className="reading-text reader-copy">{current.content}</p>
         <svg className="excerpt-end" width="46" height="18" viewBox="0 0 46 18" fill="none" aria-hidden="true"><path d="M2 11c7-8 13-8 20 0s13 8 22 0M8 11c5-4 9-4 14 0s9 4 16 0" stroke="currentColor" strokeWidth=".8" /></svg>
       </div> : error ? <div className="reader-state" role="alert">
@@ -109,8 +129,8 @@ export default function Home() {
     </section>
     <div className="reader-controls">
       <div className="choice-buttons">
-        <button type="button" className="secondary-button" onClick={() => choose(false)} disabled={!current}>次の一篇</button>
-        <button type="button" className="primary-button" onClick={() => choose(true)} disabled={!current}><svg className="bookmark-mark" width="12" height="18" viewBox="0 0 12 18" fill="none" aria-hidden="true"><path d="M2 1.5h8v14l-4-3-4 3z" stroke="currentColor" /></svg>栞をはさむ</button>
+        <button type="button" className="secondary-button" data-swipe-active={dragOffset <= -56 || undefined} onClick={() => choose(false)} disabled={!current}><span aria-hidden="true">←</span>次の一篇</button>
+        <button type="button" className="primary-button" data-swipe-active={dragOffset >= 56 || undefined} onClick={() => choose(true)} disabled={!current}><svg className="bookmark-mark" width="12" height="18" viewBox="0 0 12 18" fill="none" aria-hidden="true"><path d="M2 1.5h8v14l-4-3-4 3z" stroke="currentColor" /></svg>栞をはさむ<span aria-hidden="true">→</span></button>
       </div>
       <div className="reader-secondary"><button type="button" className="text-button undo-button" onClick={undo} disabled={!lastChoice}>戻る</button></div>
       <div className="reader-feedback" role="status" aria-live="polite"><span className="sr-only">{message}</span>{message === '栞をはさみました。' && <Link href="/list">栞を見る</Link>}</div>
