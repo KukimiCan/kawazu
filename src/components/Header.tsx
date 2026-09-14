@@ -20,7 +20,7 @@ export default function Header() {
       <nav className="header-inner" aria-label="メインナビゲーション">
         <Link href="/" className="wordmark" aria-label="kawazu ホーム">kawazu</Link>
         <div className="main-links">
-          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}>出会う</Link>
+          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}>読む</Link>
           <Link href="/list" aria-current={pathname === '/list' ? 'page' : undefined}>栞{count > 0 && <span className="nav-count">{count}</span>}</Link>
         </div>
         <div className="header-tools">
@@ -40,7 +40,7 @@ export default function Header() {
         {([['small', '小さめ'], ['medium', '標準'], ['large', '大きめ']] as [TextSize, string][]).map(([value, label]) =>
           <label key={value}><input type="radio" name="text-size" checked={textSize === value} onChange={() => setTextSize(value)} /><span>{label}</span></label>)}
       </fieldset>
-      <p className="font-preview reading-text">気になる一文に、栞をはさむ。</p>
+      <p className="font-preview reading-text">春の川を、静かな風が渡る。</p>
       {preferenceError && <p className="storage-note" role="status">設定はこの画面に反映されますが、次回のために保存できませんでした。</p>}
     </Dialog>
   </>;

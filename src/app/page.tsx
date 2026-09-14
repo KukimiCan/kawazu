@@ -93,7 +93,7 @@ export default function Home() {
   };
 
   return <div className="encounter">
-    <h1 className="sr-only">作品との出会い</h1>
+    <h1 className="sr-only">作品の冒頭を読む</h1>
     <section className="reader-sheet" data-turn={turnDirection} aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
       onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
       <span className="paper-binding" aria-hidden="true"><i /><i /><i /></span>
@@ -112,8 +112,11 @@ export default function Home() {
         <button type="button" className="secondary-button" onClick={() => choose(false)} disabled={!current}>次の一篇</button>
         <button type="button" className="primary-button" onClick={() => choose(true)} disabled={!current}><svg className="bookmark-mark" width="12" height="18" viewBox="0 0 12 18" fill="none" aria-hidden="true"><path d="M2 1.5h8v14l-4-3-4 3z" stroke="currentColor" /></svg>栞をはさむ</button>
       </div>
-      <div className="reader-secondary"><button type="button" className="text-button undo-button" onClick={undo} disabled={!lastChoice}>戻る</button></div>
-      <div className="reader-feedback" role="status" aria-live="polite"><span className="sr-only">{message}</span>{message === '栞をはさみました。' && <Link href="/list">栞を見る</Link>}</div>
+      <div className="reader-feedback sr-only" role="status" aria-live="polite">{message}</div>
+      {lastChoice && <div className="reader-followup">
+        <button type="button" className="text-button" onClick={undo}>ひとつ戻る</button>
+        {lastChoice.saved && <Link className="text-button" href="/list">栞を見る</Link>}
+      </div>}
       {error && current && <p className="refill-error" role="status">次の作品の準備ができませんでした。<button type="button" className="text-button" disabled={isFetching} onClick={() => void refill()}>再試行</button></p>}
     </div>
   </div>;

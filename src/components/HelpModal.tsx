@@ -4,12 +4,11 @@ import Dialog from './Dialog';
 
 export default function HelpModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   return <Dialog open={isOpen} onClose={onClose} title="kawazu の使い方">
-    <p className="dialog-intro">題名も作者も、まだ知らない。<br />まずは、冒頭を読んでみてください。</p>
     <dl className="help-list">
-      <div><dt>次の作品へ</dt><dd>左へスワイプ、または左のボタン。気分に合わなければ、次の一篇へ。</dd></div>
-      <div><dt>栞をはさむ</dt><dd>右へスワイプ、または「栞をはさむ」で作品を保存します。</dd></div>
-      <div><dt>ひとつ戻る</dt><dd>直前に送った作品に戻れます。栞をはさんだ操作も取り消せます。</dd></div>
-      <div><dt>栞</dt><dd>保存した作品の題名と作者がわかります。本文を開いたり、好きな作品を本棚に移したりできます。</dd></div>
+      <div><dt>次の作品へ</dt><dd>左へスワイプ、または「次の一篇」を選びます。</dd></div>
+      <div><dt>栞をはさむ</dt><dd>右へスワイプ、または「栞をはさむ」を選ぶと作品を保存します。</dd></div>
+      <div><dt>ひとつ戻る</dt><dd>直前の操作を取り消し、前の作品へ戻ります。</dd></div>
+      <div><dt>栞と本棚</dt><dd>保存した作品の題名と作者を確認できます。本文を開く、または本棚へ移せます。</dd></div>
     </dl>
     <p className="muted">キーボードの ← → でも作品を送れます。<br />「字」から書体と文字サイズを選べます。</p>
     <p className="storage-note">栞と本棚は、この端末のブラウザに保存されます。ブラウザのデータを削除すると消え、別の端末とは同期されません。</p>

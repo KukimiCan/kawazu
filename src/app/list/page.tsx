@@ -22,7 +22,7 @@ export default function ListPage() {
     setLastChange(null);
   };
   return <div className="library-page">
-    <div className="library-heading"><h1>残した一篇</h1></div>
+    <div className="library-heading"><h1>栞と本棚</h1></div>
     <div className="library-toolbar">
       <div className="shelf-tabs" role="group" aria-label="保存先">
         <button type="button" aria-pressed={activeTab === 'liked'} onClick={() => setActiveTab('liked')}>栞 <span>{likedBooks.length}</span></button>
@@ -33,8 +33,8 @@ export default function ListPage() {
     {lastChange && <div className="undo-notice" role="status"><span>{lastChange.message}</span><button type="button" className="text-button" onClick={undo}>取り消す</button></div>}
     {!isHydrated ? <p className="empty-state" role="status">保存した作品を読み込んでいます。</p> : filtered.length === 0 ?
       <div className="empty-state">
-        <h2>{query.trim() ? '見つかりませんでした' : 'まだ、ありません'}</h2>
-        {query.trim() ? <button className="secondary-button" onClick={() => setQuery('')}>検索をクリア</button> : activeTab === 'liked' ? <Link className="primary-button" href="/">一篇と出会う</Link> : <button className="secondary-button" onClick={() => setActiveTab('liked')}>栞を見る</button>}
+        <h2>{query.trim() ? '見つかりませんでした' : 'まだありません'}</h2>
+        {query.trim() ? <button className="secondary-button" onClick={() => setQuery('')}>検索をクリア</button> : activeTab === 'liked' ? <Link className="primary-button" href="/">冒頭を読む</Link> : <button className="secondary-button" onClick={() => setActiveTab('liked')}>栞を見る</button>}
       </div> : <>
         <p className="result-count" role="status">{filtered.length} 作品{query.trim() && ` / ${books.length} 作品中`}</p>
         <div className="book-list">{filtered.map((book, index) => <article className="book-entry" key={book.id}>
