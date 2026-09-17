@@ -14,10 +14,11 @@ interface ApiResponse {
 const API_BASE_PATH = (process.env.NEXT_PUBLIC_AOZORA_API_BASE_PATH ?? '/api/aozora').replace(/\/$/, '');
 const INTRO_LENGTH = 500;
 const FETCH_BATCH_SIZE = 5;
+const INITIAL_FETCH_COUNT = 1;
 const TARGET_QUEUE_SIZE = 10;
 const MAX_FETCH_ATTEMPT_MULTIPLIER = 6;
 const REQUEST_TIMEOUT_MS = 10000;
-const TEXT_CHUNK_SIZE = 2;
+const TEXT_CHUNK_SIZE = 8;
 const TEXT_ENTER_STAGGER_MS = 6;
 const TEXT_ENTER_TAIL_STAGGER_MS = 2;
 const TEXT_EXIT_STAGGER_MS = 3;
@@ -118,7 +119,7 @@ function getTextEnterDelay(index: number) {
   );
 }
 
-function CharacterMotion({ content, direction, onExitComplete }: CharacterMotionProps) {
+const CharacterMotion = React.memo(function CharacterMotion({ content, direction, onExitComplete }: CharacterMotionProps) {
   const segments = useMemo(
     () => Array.from(content).reduce<string[]>((chunks, character) => {
       if (character === '\n') {
@@ -172,8 +173,10 @@ function CharacterMotion({ content, direction, onExitComplete }: CharacterMotion
               '--text-enter-delay': `${getTextEnterDelay(index)}ms`,
               '--text-exit-delay': `${Math.min(index, MAX_TEXT_EXIT_STAGGER_INDEX) * TEXT_EXIT_STAGGER_MS}ms`,
               '--text-exit-duration': `${TEXT_EXIT_BASE_DURATION_MS + ((index * 37) % TEXT_EXIT_DURATION_VARIANCE_MS)}ms`,
-              '--text-exit-x': `${96 + (index % 12) * 5}px`,
-              '--text-exit-y': `${-4 + (index % 5) * 2}px`,
+              '--text-exit-x': `${88 + (index % 17) * 6}px`,
+              '--text-exit-y': `${-6 + (index % 9) * 2}px`,
+              '--text-exit-rotate': `${((index * 13) % 9) - 4}deg`,
+              '--text-exit-rotate-left': `${-1 * (((index * 13) % 9) - 4)}deg`,
             } as React.CSSProperties}
           >
             {segment.replaceAll(' ', '\u00A0')}
@@ -182,10 +185,14 @@ function CharacterMotion({ content, direction, onExitComplete }: CharacterMotion
       })}
     </p>
   );
-}
+});
 
 function isInteractiveTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && Boolean(target.closest('button, a, input, textarea, select, [data-ignore-swipe]'));
+}
+
+function isReadingTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest('.novel-scroll-window'));
 }
 
 export default function Home() {
@@ -193,9 +200,12 @@ export default function Home() {
   const [isFetching, setIsFetching] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<'left' | 'right' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [liveMessage, setLiveMessage] = useState('');
   const knownBookIdsRef = useRef<Set<string>>(new Set());
   const isFetchingRef = useRef(false);
   const pointerStartXRef = useRef<number | null>(null);
+  const pointerStartYRef = useRef<number | null>(null);
+  const scrollWindowRef = useRef<HTMLDivElement | null>(null);
 
   const fetchNovels = useCallback(async (count: number) => {
     if (isFetchingRef.current) return;
@@ -241,6 +251,8 @@ export default function Home() {
               }
             }
 
+            // Use the single-item route as a fallback, then keep the remaining
+            // attempts available for transient cache or upstream failures.
             break;
           }
 
@@ -282,11 +294,23 @@ export default function Home() {
 
   useEffect(() => {
     if (novels.length < TARGET_QUEUE_SIZE) {
-      void fetchNovels(Math.min(FETCH_BATCH_SIZE, TARGET_QUEUE_SIZE - novels.length));
+      const fetchCount = novels.length === 0
+        ? INITIAL_FETCH_COUNT
+        : Math.min(FETCH_BATCH_SIZE, TARGET_QUEUE_SIZE - novels.length);
+      void fetchNovels(fetchCount);
     }
   }, [fetchNovels, novels.length]);
 
   const currentNovel = novels.length > 0 ? novels[novels.length - 1] : null;
+
+  useEffect(() => {
+    if (!scrollWindowRef.current) return;
+
+    scrollWindowRef.current.scrollTop = 0;
+    if (currentNovel) {
+      setLiveMessage('新しい作品を表示しました');
+    }
+  }, [currentNovel]);
 
   const handleChoice = useCallback((direction: ChoiceDirection) => {
     if (!currentNovel || pendingChoice) return;
@@ -296,6 +320,8 @@ export default function Home() {
 
   const completeChoice = useCallback(() => {
     if (!pendingChoice || !currentNovel) return;
+
+    setLiveMessage(pendingChoice === 'right' ? '栞に残しました。次の作品です' : '次の作品です');
 
     if (pendingChoice === 'right') {
       addLikedBook(currentNovel);
@@ -307,26 +333,48 @@ export default function Home() {
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     if (!currentNovel || pendingChoice || isInteractiveTarget(event.target)) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
     pointerStartXRef.current = event.clientX;
+    pointerStartYRef.current = event.clientY;
   }, [currentNovel, pendingChoice]);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!currentNovel || pendingChoice || pointerStartXRef.current === null) return;
+    if (!currentNovel || pendingChoice || pointerStartXRef.current === null || pointerStartYRef.current === null) return;
 
     const offsetX = event.clientX - pointerStartXRef.current;
+    const offsetY = event.clientY - pointerStartYRef.current;
     pointerStartXRef.current = null;
+    pointerStartYRef.current = null;
 
-    if (offsetX > 80) handleChoice('right');
-    else if (offsetX < -80) handleChoice('left');
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    if (Math.abs(offsetX) > 80 && Math.abs(offsetX) > Math.abs(offsetY) * 1.2) {
+      handleChoice(offsetX > 0 ? 'right' : 'left');
+    }
   }, [currentNovel, handleChoice, pendingChoice]);
 
-  const handlePointerCancel = useCallback(() => {
+  const handlePointerCancel = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     pointerStartXRef.current = null;
+    pointerStartYRef.current = null;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   }, []);
 
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'ArrowLeft') handleChoice('left');
-    else if (event.key === 'ArrowRight') handleChoice('right');
+    if (event.defaultPrevented || isInteractiveTarget(event.target) || isReadingTarget(event.target)) return;
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      handleChoice('left');
+    } else if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      handleChoice('right');
+    }
   }, [handleChoice]);
 
   useEffect(() => {
@@ -336,13 +384,24 @@ export default function Home() {
 
   return (
     <div
-      className="flex min-h-[calc(100vh-5rem)] w-full touch-pan-y select-none flex-col items-center justify-center gap-7 bg-[var(--background)] px-4 py-7"
+      className={`kawazu-stage relative flex min-h-[calc(100vh-5rem)] w-full touch-pan-y select-none flex-col items-center justify-center gap-7 overflow-hidden bg-[var(--background)] px-4 py-7 ${
+        pendingChoice ? `is-choosing-${pendingChoice}` : ''
+      }`}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerCancel}
     >
-      <div className="card-stage relative flex w-full max-w-xl items-center justify-center">
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {liveMessage}
+      </div>
+      <div className="wafuu-atmosphere" aria-hidden="true">
+        <div className="shoji-field" />
+        <div className="paper-tide paper-tide-left" />
+        <div className="paper-tide paper-tide-right" />
+        <div className={`ink-release ${pendingChoice ? `is-active is-${pendingChoice}` : ''}`} />
+      </div>
+
+      <div className="card-stage relative z-10 flex w-full max-w-xl items-center justify-center">
         {isFetching && novels.length === 0 && (
           <div className="flex flex-col items-center gap-5 text-[var(--muted)]">
             <span className="breath-loader" aria-hidden="true" />
@@ -366,9 +425,16 @@ export default function Home() {
         {currentNovel && (
           <div
             className="reading-pane absolute h-full w-full overflow-hidden"
+            aria-busy={isFetching && !currentNovel}
             draggable={false}
           >
-            <div className="novel-scroll-window hidden-scrollbar overflow-y-auto px-8 pb-8 pt-9 sm:px-10">
+            <div
+              ref={scrollWindowRef}
+              className="novel-scroll-window hidden-scrollbar overflow-y-auto px-8 pb-8 pt-9 sm:px-10"
+              tabIndex={0}
+              role="region"
+              aria-label="作品の冒頭。上下矢印で続きを読めます"
+            >
               <CharacterMotion
                 key={currentNovel.id}
                 content={currentNovel.content}
@@ -385,7 +451,7 @@ export default function Home() {
           type="button"
           onClick={() => handleChoice('left')}
           data-ignore-swipe
-          className="grid h-14 w-14 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="quiet-action grid h-14 w-14 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] disabled:cursor-not-allowed disabled:opacity-40"
           disabled={novels.length === 0 || pendingChoice !== null}
           aria-label="流す"
         >
@@ -397,7 +463,7 @@ export default function Home() {
           type="button"
           onClick={() => handleChoice('right')}
           data-ignore-swipe
-          className="grid h-14 w-14 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="quiet-action grid h-14 w-14 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
           disabled={novels.length === 0 || pendingChoice !== null}
           aria-label="思い出に残す"
         >

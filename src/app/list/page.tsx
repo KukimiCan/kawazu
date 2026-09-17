@@ -18,12 +18,15 @@ export default function ListPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:py-14">
       <div className="mb-10 flex items-end justify-between border-b border-[var(--line)]">
-        <div className="flex gap-8">
+        <div className="flex gap-8" role="tablist" aria-label="残した作品">
           <button
             type="button"
             onClick={() => setActiveTab('liked')}
             className={`${tabStyle} ${activeTab === 'liked' ? activeTabStyle : inactiveTabStyle}`}
-            aria-pressed={activeTab === 'liked'}
+            id="liked-tab"
+            role="tab"
+            aria-selected={activeTab === 'liked'}
+            aria-controls="liked-panel"
           >
             栞 <span className="ml-1 text-xs text-[var(--muted)]">{likedBooks.length}</span>
           </button>
@@ -31,14 +34,22 @@ export default function ListPage() {
             type="button"
             onClick={() => setActiveTab('favorites')}
             className={`${tabStyle} ${activeTab === 'favorites' ? activeTabStyle : inactiveTabStyle}`}
-            aria-pressed={activeTab === 'favorites'}
+            id="favorites-tab"
+            role="tab"
+            aria-selected={activeTab === 'favorites'}
+            aria-controls="favorites-panel"
           >
             本棚 <span className="ml-1 text-xs text-[var(--muted)]">{favoriteBooks.length}</span>
           </button>
         </div>
       </div>
       
-      <div>
+      <div
+        id={activeTab === 'liked' ? 'liked-panel' : 'favorites-panel'}
+        role="tabpanel"
+        aria-labelledby={activeTab === 'liked' ? 'liked-tab' : 'favorites-tab'}
+        tabIndex={0}
+      >
         {booksToDisplay.length === 0 ? (
           <div className="mt-20 text-center text-[var(--muted)]">
             <p className="text-sm">まだ何も残っていません。</p>
@@ -83,6 +94,7 @@ export default function ListPage() {
                     type="button"
                     onClick={() => activeTab === 'liked' ? removeLikedBook(book.id) : removeFavoriteBook(book.id)}
                     className="text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                    aria-label="この作品を削除"
                   >
                     削除
                   </button>

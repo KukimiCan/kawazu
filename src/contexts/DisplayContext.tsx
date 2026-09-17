@@ -21,6 +21,14 @@ export const FONT_OPTIONS: Array<{ id: AppFont; label: string }> = [
   { id: "notoSerif", label: "Noto Serif JP" },
 ];
 
+const FONT_STYLESHEETS: Partial<Record<AppFont, string>> = {
+  klee: "https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&display=swap",
+  shippori: "https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&display=swap",
+  zen: "https://fonts.googleapis.com/css2?family=Zen+Kurenaido&display=swap",
+  kaisei: "https://fonts.googleapis.com/css2?family=Kaisei+Tokumin:wght@400;500&display=swap",
+  notoSerif: "https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&display=swap",
+};
+
 interface DisplayContextType {
   font: AppFont;
   setFont: (font: AppFont) => void;
@@ -44,6 +52,29 @@ export function DisplayProvider({ children }: { children: ReactNode }) {
       document.documentElement.dataset.font = "klee";
     }
   }, []);
+
+  useEffect(() => {
+    const linkId = "kawazu-font-stylesheet";
+    const href = FONT_STYLESHEETS[font];
+    const existingLink = document.getElementById(linkId);
+
+    if (!href) {
+      existingLink?.remove();
+      return;
+    }
+
+    const link = existingLink instanceof HTMLLinkElement
+      ? existingLink
+      : document.createElement("link");
+
+    link.id = linkId;
+    link.rel = "stylesheet";
+    link.href = href;
+
+    if (!existingLink) {
+      document.head.appendChild(link);
+    }
+  }, [font]);
 
   const setFont = useCallback((nextFont: AppFont) => {
     setFontState(nextFont);

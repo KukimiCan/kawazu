@@ -24,7 +24,7 @@ export default function RootLayout({
         <DisplayProvider>
           <BookProvider>
             <Header />
-            <main className="pt-20">
+            <main className="pt-16">
               {children}
             </main>
           </BookProvider>

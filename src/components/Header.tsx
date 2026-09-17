@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppFont, FONT_OPTIONS, useDisplay } from '@/contexts/DisplayContext';
 import HelpModal from './HelpModal';
 
@@ -21,11 +21,27 @@ export default function Header() {
     setIsFontMenuOpen(false);
   };
 
+  useEffect(() => {
+    if (!isFontMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFontMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFontMenuOpen]);
+
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-20 border-b border-[var(--line)]/70 bg-[var(--background)]/86 backdrop-blur-md">
-        <nav className="mx-auto grid h-20 max-w-5xl grid-cols-[1fr_auto_1fr] items-center px-5">
-          <div className="text-xs tracking-[0.24em] text-[var(--muted)]">kawazu</div>
+      <header className="kawazu-header fixed top-0 left-0 right-0 z-20 border-b border-[var(--line)]/70 bg-[var(--background)]/96">
+        <nav className="mx-auto grid h-16 max-w-5xl grid-cols-[1fr_auto_1fr] items-center px-5">
+          <div className="flex items-center gap-2 text-xs tracking-[0.24em] text-[var(--muted)]">
+            <span className="header-mark" aria-hidden="true" />
+            <span>kawazu</span>
+          </div>
 
           <div className="flex items-center gap-8">
             <Link
@@ -52,16 +68,20 @@ export default function Header() {
                 className="grid h-9 w-9 place-items-center rounded-full text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
                 aria-label="書体を選ぶ"
                 aria-expanded={isFontMenuOpen}
+                aria-haspopup="listbox"
+                aria-controls="font-menu"
               >
                 字
               </button>
               {isFontMenuOpen && (
-                <div className="absolute right-0 mt-3 max-h-[min(70vh,360px)] w-52 overflow-y-auto rounded-lg border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[0_18px_48px_rgb(31_36_32_/_0.12)]">
+                <div id="font-menu" role="listbox" aria-label="書体" className="absolute right-0 mt-3 max-h-[min(70vh,360px)] w-52 overflow-y-auto rounded-lg border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[0_18px_48px_rgb(31_36_32_/_0.12)]">
                   {FONT_OPTIONS.map((option) => (
                     <button
                       key={option.id}
                       type="button"
                       onClick={() => handleFontChange(option.id)}
+                      role="option"
+                      aria-selected={font === option.id}
                       className={`mt-0.5 flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors first:mt-0 hover:bg-[var(--surface-soft)] ${font === option.id ? 'text-[var(--foreground)]' : 'text-[var(--muted)]'}`}
                     >
                       <span>{option.label}</span>

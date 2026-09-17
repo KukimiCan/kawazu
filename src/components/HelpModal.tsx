@@ -1,5 +1,5 @@
 // src/components/HelpModal.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -7,12 +7,48 @@ interface HelpModalProps {
 }
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+      return;
+    }
+
+    previousFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+
+    window.requestAnimationFrame(() => closeButtonRef.current?.focus());
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+
+      const focusableElements = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => !element.hasAttribute('disabled'));
+
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -28,6 +64,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       onMouseDown={onClose}
     >
       <div
+        ref={dialogRef}
         className="relative max-h-[min(80vh,720px)] w-full max-w-md overflow-y-auto rounded-[3px] border border-[var(--line)] bg-[var(--surface)] p-8 paper-shadow"
         role="dialog"
         aria-modal="true"
@@ -74,6 +111,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           よき出会いを。
         </p>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={onClose}
           className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
