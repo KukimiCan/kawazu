@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import Link from 'next/link';
 import { useBooks } from '@/contexts/BookContext';
 import { useNovelQueue } from '@/hooks/useNovelQueue';
@@ -18,30 +18,41 @@ export default function Home() {
   const pointer = useRef<{ x: number; y: number; id: number } | null>(null);
   const choiceLock = useRef(false);
   const reader = useRef<HTMLDivElement>(null);
-  const departure = useRef<Animation | null>(null);
-  const [turnDirection, setTurnDirection] = useState<'forward' | 'back'>('forward');
+  const arrival = useRef<Animation | null>(null);
+  const pendingTurn = useRef<'forward' | 'back' | null>(null);
   const current = queuedBooks[0] ?? null;
+  const currentId = current?.id;
 
-  useEffect(() => { choiceLock.current = false; }, [current?.id]);
-  useEffect(() => () => { departure.current?.cancel(); }, []);
+  useEffect(() => () => { arrival.current?.cancel(); }, []);
 
-  const turnPage = useCallback(async (direction: 'forward' | 'back', commit: () => void) => {
+  useLayoutEffect(() => {
+    const direction = pendingTurn.current;
+    const element = reader.current;
+    if (!direction || !element) return;
+    pendingTurn.current = null;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      choiceLock.current = false;
+      return;
+    }
+    const offset = direction === 'forward' ? 8 : -8;
+    const animation = element.animate([
+      { transform: `translateX(${offset}px)` },
+      { transform: 'translateX(0)' },
+    ], { duration: 180, easing: 'cubic-bezier(.2,.65,.3,1)' });
+    arrival.current = animation;
+    const release = () => {
+      if (arrival.current !== animation) return;
+      arrival.current = null;
+      choiceLock.current = false;
+    };
+    void animation.finished.then(release, release);
+  }, [currentId]);
+
+  const turnPage = useCallback((direction: 'forward' | 'back', commit: () => void) => {
     if (choiceLock.current) return;
     choiceLock.current = true;
-    setTurnDirection(direction);
-    if (reader.current && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const offset = direction === 'forward' ? -16 : 16;
-      const animation = reader.current.animate([
-        { opacity: 1, transform: 'translateX(0)' },
-        { opacity: 0, transform: `translateX(${offset}px)` },
-      ], { duration: 150, easing: 'ease-in', fill: 'forwards' });
-      departure.current = animation;
-      try { await animation.finished; } catch { choiceLock.current = false; return; }
-    }
+    pendingTurn.current = direction;
     commit();
-    departure.current?.cancel();
-    departure.current = null;
-    choiceLock.current = false;
   }, []);
 
   const choose = useCallback((save: boolean) => {
@@ -94,7 +105,7 @@ export default function Home() {
 
   return <div className="encounter">
     <h1 className="sr-only">作品の冒頭を読む</h1>
-    <section className="reader-sheet" data-turn={turnDirection} aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
+    <section className="reader-sheet" aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
       onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
       <span className="paper-binding" aria-hidden="true"><i /><i /><i /></span>
       {current ? <div className="reader-scroll" ref={reader} tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
