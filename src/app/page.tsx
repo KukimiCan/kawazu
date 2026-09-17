@@ -206,9 +206,16 @@ export default function Home() {
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
   const scrollWindowRef = useRef<HTMLDivElement | null>(null);
+  const retryTimeoutRef = useRef<number | null>(null);
+  const initialRetryCountRef = useRef(0);
 
   const fetchNovels = useCallback(async (count: number) => {
     if (isFetchingRef.current) return;
+
+    if (retryTimeoutRef.current !== null) {
+      window.clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
 
     isFetchingRef.current = true;
     setIsFetching(true);
@@ -274,19 +281,36 @@ export default function Home() {
       }
 
       if (fetchedNovels.length > 0) {
+        initialRetryCountRef.current = 0;
         setNovels(prev => [...fetchedNovels, ...prev]);
       } else {
+        setLiveMessage('作品を取得できませんでした');
         setErrorMessage(
           lastError
             ? `作品を取得できませんでした。API設定または接続状態を確認してください。(${lastError})`
             : '作品を取得できませんでした。時間をおいてもう一度お試しください。'
         );
+
+        if (novels.length === 0 && initialRetryCountRef.current < 2) {
+          initialRetryCountRef.current += 1;
+          const retryDelay = 1200 * initialRetryCountRef.current;
+          retryTimeoutRef.current = window.setTimeout(() => {
+            retryTimeoutRef.current = null;
+            void fetchNovels(count);
+          }, retryDelay);
+        }
       }
     } finally {
       setIsFetching(false);
       isFetchingRef.current = false;
     }
-  }, [setNovels]);
+  }, [novels.length, setNovels]);
+
+  useEffect(() => () => {
+    if (retryTimeoutRef.current !== null) {
+      window.clearTimeout(retryTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     knownBookIdsRef.current = new Set([...novels, ...likedBooks, ...favoriteBooks].map(b => b.id));
