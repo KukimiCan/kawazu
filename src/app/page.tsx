@@ -93,11 +93,15 @@ export default function Home() {
   const pointerDown = (event: PointerEvent<HTMLElement>) => {
     pointer.current = null;
     if (!event.isPrimary || event.button !== 0 || isInteractiveTarget(event.target)) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
     pointer.current = { x: event.clientX, y: event.clientY, id: event.pointerId };
   };
   const pointerUp = (event: PointerEvent<HTMLElement>) => {
     const start = pointer.current;
     pointer.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
     if (!start || start.id !== event.pointerId || window.getSelection()?.toString()) return;
     const direction = swipeDirection(event.clientX - start.x, event.clientY - start.y);
     if (direction) choose(direction === 'right');
@@ -106,7 +110,12 @@ export default function Home() {
   return <div className="encounter">
     <h1 className="sr-only">作品の冒頭を読む</h1>
     <section className="reader-sheet" aria-label="作品の冒頭" aria-busy={!current && (isFetching || !isHydrated)}
-      onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={() => { pointer.current = null; }} onPointerLeave={() => { pointer.current = null; }}>
+      onPointerDown={pointerDown} onPointerUp={pointerUp} onPointerCancel={(event) => {
+        pointer.current = null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      }}>
       <span className="paper-binding" aria-hidden="true"><i /><i /><i /></span>
       {current ? <div className="reader-scroll" ref={reader} tabIndex={0} key={current.id} aria-label="冒頭文。上下にスクロールできます">
         <p className="reading-text reader-copy">{current.content}</p>
