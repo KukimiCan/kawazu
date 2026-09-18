@@ -61,7 +61,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(31_36_32_/_0.22)] px-4 backdrop-blur-[2px]"
-      onMouseDown={onClose}
+      onPointerDown={onClose}
     >
       <div
         ref={dialogRef}
@@ -69,7 +69,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-modal-title"
-        onMouseDown={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <h2 id="help-modal-title" className="text-xl font-medium text-[var(--foreground)]">作法</h2>
         <p className="mt-5 text-sm leading-8 text-[var(--muted)]">
@@ -80,7 +80,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <li className="flex gap-4">
             <span className="mt-1 text-[var(--muted)]" aria-hidden="true">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" d="M7 17L17 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m6-6-6 6 6 6" />
               </svg>
             </span>
             <span className="leading-7">左へ送ると、次の作品へ移ります。</span>
@@ -114,7 +114,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           ref={closeButtonRef}
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
+          className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
           aria-label="閉じる"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

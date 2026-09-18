@@ -27,6 +27,7 @@ const TEXT_EXIT_BASE_DURATION_MS = 300;
 const TEXT_EXIT_DURATION_VARIANCE_MS = 220;
 const TEXT_ENTER_FULL_STAGGER_INDEX = 90;
 const MAX_TEXT_EXIT_STAGGER_INDEX = 90;
+const TEXT_EXIT_COMPLETION_BUFFER_MS = 32;
 
 type ChoiceDirection = 'left' | 'right';
 
@@ -139,16 +140,28 @@ const CharacterMotion = React.memo(function CharacterMotion({ content, direction
     [content]
   );
 
+  const exitCompletionDelay = useMemo(
+    () => Math.max(
+      0,
+      ...segments.map((_, index) => (
+        Math.min(index, MAX_TEXT_EXIT_STAGGER_INDEX) * TEXT_EXIT_STAGGER_MS +
+        TEXT_EXIT_BASE_DURATION_MS +
+        ((index * 37) % TEXT_EXIT_DURATION_VARIANCE_MS)
+      ))
+    ),
+    [segments]
+  );
+
   useEffect(() => {
     if (!direction) return;
 
     const timeoutId = window.setTimeout(
       onExitComplete,
-      TEXT_EXIT_BASE_DURATION_MS + TEXT_EXIT_DURATION_VARIANCE_MS + MAX_TEXT_EXIT_STAGGER_INDEX * TEXT_EXIT_STAGGER_MS
+      exitCompletionDelay + TEXT_EXIT_COMPLETION_BUFFER_MS
     );
 
     return () => window.clearTimeout(timeoutId);
-  }, [direction, onExitComplete]);
+  }, [direction, exitCompletionDelay, onExitComplete]);
 
   return (
     <p
@@ -196,7 +209,7 @@ function isReadingTarget(target: EventTarget | null) {
 }
 
 export default function Home() {
-  const { queuedBooks: novels, setQueuedBooks: setNovels, addLikedBook, likedBooks, favoriteBooks } = useBooks();
+  const { queuedBooks: novels, setQueuedBooks: setNovels, addLikedBook, likedBooks, favoriteBooks, isHydrated } = useBooks();
   const [isFetching, setIsFetching] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<'left' | 'right' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -205,6 +218,7 @@ export default function Home() {
   const isFetchingRef = useRef(false);
   const pointerStartXRef = useRef<number | null>(null);
   const pointerStartYRef = useRef<number | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
   const scrollWindowRef = useRef<HTMLDivElement | null>(null);
   const retryTimeoutRef = useRef<number | null>(null);
   const initialRetryCountRef = useRef(0);
@@ -317,13 +331,15 @@ export default function Home() {
   }, [novels, likedBooks, favoriteBooks]);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     if (novels.length < TARGET_QUEUE_SIZE) {
       const fetchCount = novels.length === 0
         ? INITIAL_FETCH_COUNT
         : Math.min(FETCH_BATCH_SIZE, TARGET_QUEUE_SIZE - novels.length);
       void fetchNovels(fetchCount);
     }
-  }, [fetchNovels, novels.length]);
+  }, [fetchNovels, isHydrated, novels.length]);
 
   const currentNovel = novels.length > 0 ? novels[novels.length - 1] : null;
 
@@ -356,20 +372,28 @@ export default function Home() {
   }, [pendingChoice, currentNovel, addLikedBook, setNovels]);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!currentNovel || pendingChoice || isInteractiveTarget(event.target)) return;
+    if (!event.isPrimary || !currentNovel || pendingChoice || isInteractiveTarget(event.target)) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
+    pointerIdRef.current = event.pointerId;
     pointerStartXRef.current = event.clientX;
     pointerStartYRef.current = event.clientY;
   }, [currentNovel, pendingChoice]);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
-    if (!currentNovel || pendingChoice || pointerStartXRef.current === null || pointerStartYRef.current === null) return;
+    if (
+      event.pointerId !== pointerIdRef.current ||
+      !currentNovel ||
+      pendingChoice ||
+      pointerStartXRef.current === null ||
+      pointerStartYRef.current === null
+    ) return;
 
     const offsetX = event.clientX - pointerStartXRef.current;
     const offsetY = event.clientY - pointerStartYRef.current;
     pointerStartXRef.current = null;
     pointerStartYRef.current = null;
+    pointerIdRef.current = null;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -381,8 +405,11 @@ export default function Home() {
   }, [currentNovel, handleChoice, pendingChoice]);
 
   const handlePointerCancel = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== pointerIdRef.current) return;
+
     pointerStartXRef.current = null;
     pointerStartYRef.current = null;
+    pointerIdRef.current = null;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -408,9 +435,7 @@ export default function Home() {
 
   return (
     <div
-      className={`kawazu-stage relative flex min-h-[calc(100vh-5rem)] w-full touch-pan-y select-none flex-col items-center justify-center gap-7 overflow-hidden bg-[var(--background)] px-4 py-7 ${
-        pendingChoice ? `is-choosing-${pendingChoice}` : ''
-      }`}
+      className="kawazu-stage relative flex min-h-[calc(100dvh-4rem)] w-full touch-pan-y select-none flex-col items-center justify-center gap-7 overflow-hidden bg-[var(--background)] px-4 py-7"
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
@@ -418,15 +443,8 @@ export default function Home() {
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
         {liveMessage}
       </div>
-      <div className="wafuu-atmosphere" aria-hidden="true">
-        <div className="shoji-field" />
-        <div className="paper-tide paper-tide-left" />
-        <div className="paper-tide paper-tide-right" />
-        <div className={`ink-release ${pendingChoice ? `is-active is-${pendingChoice}` : ''}`} />
-      </div>
-
       <div className="card-stage relative z-10 flex w-full max-w-xl items-center justify-center">
-        {isFetching && novels.length === 0 && (
+        {(!isHydrated || (isFetching && novels.length === 0)) && (
           <div className="flex flex-col items-center gap-5 text-[var(--muted)]">
             <span className="breath-loader" aria-hidden="true" />
             <p className="text-sm">しばし</p>
@@ -480,7 +498,7 @@ export default function Home() {
           aria-label="流す"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" d="M7 17L17 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m6-6-6 6 6 6" />
           </svg>
         </button>
         <button

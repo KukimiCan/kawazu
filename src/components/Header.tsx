@@ -13,7 +13,7 @@ export default function Header() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isFontMenuOpen, setIsFontMenuOpen] = useState(false);
 
-  const linkStyle = "relative px-2 py-2 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]";
+  const linkStyle = "relative px-3 py-3 text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]";
   const activeLinkStyle = "text-[var(--foreground)] after:absolute after:left-1/2 after:bottom-1 after:h-px after:w-6 after:-translate-x-1/2 after:bg-[var(--foreground)]";
 
   const handleFontChange = (nextFont: AppFont) => {
@@ -65,7 +65,7 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setIsFontMenuOpen((isOpen) => !isOpen)}
-                className="grid h-9 w-9 place-items-center rounded-full text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
+                className="grid h-11 w-11 place-items-center rounded-full text-sm text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
                 aria-label="書体を選ぶ"
                 aria-expanded={isFontMenuOpen}
                 aria-haspopup="listbox"
@@ -94,7 +94,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setIsHelpModalOpen(true)}
-              className="grid h-9 w-9 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
+              className="grid h-11 w-11 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
               aria-label="ヘルプ"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>

@@ -9,7 +9,7 @@ export default function ListPage() {
   const [activeTab, setActiveTab] = useState<'liked' | 'favorites'>('liked');
   const { likedBooks, favoriteBooks, addFavoriteBook, removeLikedBook, removeFavoriteBook } = useBooks();
   
-  const tabStyle = "relative px-1 pb-3 text-sm transition-colors";
+  const tabStyle = "relative min-h-11 px-2 py-3 text-sm transition-colors";
   const activeTabStyle = "text-[var(--foreground)] after:absolute after:left-0 after:bottom-0 after:h-px after:w-full after:bg-[var(--foreground)]";
   const inactiveTabStyle = "text-[var(--muted)] hover:text-[var(--foreground)]";
 
@@ -68,7 +68,7 @@ export default function ListPage() {
                     <button
                       type="button"
                       onClick={() => addFavoriteBook(book)}
-                      className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
+                      className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface-soft)] hover:text-[var(--foreground)]"
                       aria-label={`${book.name}を本棚に移す`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -93,7 +93,7 @@ export default function ListPage() {
                   <button
                     type="button"
                     onClick={() => activeTab === 'liked' ? removeLikedBook(book.id) : removeFavoriteBook(book.id)}
-                    className="text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+                    className="-my-2 min-h-11 px-2 text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
                     aria-label="この作品を削除"
                   >
                     削除

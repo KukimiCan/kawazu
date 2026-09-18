@@ -27,6 +27,7 @@ interface BookContextType {
   queuedBooks: Book[];
   likedBooks: Book[];
   favoriteBooks: Book[];
+  isHydrated: boolean;
   setQueuedBooks: Dispatch<SetStateAction<Book[]>>;
   addLikedBook: (book: Book) => void;
   addFavoriteBook: (book: Book) => void;
@@ -50,13 +51,18 @@ function isBook(value: unknown): value is Book {
 }
 
 function readStoredBooks(key: string): Book[] {
-  const storedValue = localStorage.getItem(key);
-  if (!storedValue) return [];
+  try {
+    const storedValue = localStorage.getItem(key);
+    if (!storedValue) return [];
 
-  const parsedValue: unknown = JSON.parse(storedValue);
-  if (!Array.isArray(parsedValue)) return [];
+    const parsedValue: unknown = JSON.parse(storedValue);
+    if (!Array.isArray(parsedValue)) return [];
 
-  return parsedValue.filter(isBook);
+    return parsedValue.filter(isBook);
+  } catch (error) {
+    console.error(`Could not read ${key} from local storage.`, error);
+    return [];
+  }
 }
 
 export function BookProvider({ children }: { children: ReactNode }) {
@@ -67,14 +73,18 @@ export function BookProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      setQueuedBooks(readStoredBooks("queuedBooks"));
       setLikedBooks(readStoredBooks("likedBooks"));
       setFavoriteBooks(readStoredBooks("favoriteBooks"));
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsHydrated(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    localStorage.setItem("queuedBooks", JSON.stringify(queuedBooks));
+  }, [isHydrated, queuedBooks]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -122,6 +132,7 @@ export function BookProvider({ children }: { children: ReactNode }) {
     queuedBooks,
     likedBooks,
     favoriteBooks,
+    isHydrated,
     setQueuedBooks,
     addLikedBook,
     addFavoriteBook,
@@ -131,6 +142,7 @@ export function BookProvider({ children }: { children: ReactNode }) {
     queuedBooks,
     likedBooks,
     favoriteBooks,
+    isHydrated,
     setQueuedBooks,
     addLikedBook,
     addFavoriteBook,

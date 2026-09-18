@@ -7,11 +7,7 @@
   --foreground: #202722;
   --muted: #5f695f;
   --line: #c9d1c7;
-  --ink: #1f2420;
-  --sumi: #2d302a;
   --akebono: #a44f3f;
-  --ink-soft: rgb(31 36 32 / 0.055);
-  --ink-faint: rgb(31 36 32 / 0.025);
   --shadow-soft: none;
   --font-body: "Klee One", Arial, Helvetica, sans-serif;
 }
@@ -61,6 +57,15 @@ body {
   font-feature-settings: "palt" 1;
   letter-spacing: 0;
   text-rendering: optimizeLegibility;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 :where(button, a, [tabindex="0"]):focus-visible {
@@ -90,18 +95,6 @@ body {
   border: 1px solid var(--akebono);
   border-radius: 9999px;
   transform: rotate(45deg);
-}
-
-body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  content: "";
-  background-image:
-    repeating-linear-gradient(92deg, var(--ink-faint) 0 1px, transparent 1px 12px),
-    repeating-linear-gradient(2deg, rgb(31 36 32 / 0.018) 0 1px, transparent 1px 19px);
-  opacity: 0.8;
 }
 
 .hidden-scrollbar {
@@ -134,18 +127,6 @@ body::before {
   }
 }
 
-@media (max-width: 639px) {
-  .shoji-field {
-    opacity: 0.34;
-    background:
-      linear-gradient(90deg, transparent 0 calc(50% - 1px), rgb(31 36 32 / 0.04) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
-  }
-
-  .paper-tide {
-    display: none;
-  }
-}
-
 .reading-pane {
   position: absolute;
   contain: layout paint;
@@ -161,77 +142,6 @@ body::before {
   background:
     linear-gradient(90deg, transparent, rgb(31 36 32 / 0.042) 50%, transparent),
     linear-gradient(180deg, rgb(251 252 248 / 0.74), transparent 30%, transparent 70%, rgb(218 228 216 / 0.52));
-}
-
-.wafuu-atmosphere {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.shoji-field {
-  position: absolute;
-  inset: -8% -4%;
-  background:
-    linear-gradient(90deg, transparent 0 calc(50% - 1px), rgb(31 36 32 / 0.055) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    repeating-linear-gradient(90deg, transparent 0 8.6vw, rgb(31 36 32 / 0.032) 8.6vw calc(8.6vw + 1px)),
-    repeating-linear-gradient(0deg, transparent 0 6.2rem, rgb(31 36 32 / 0.026) 6.2rem calc(6.2rem + 1px));
-  opacity: 0.72;
-  transform: rotate(-0.6deg) scale(1.02);
-  transform-origin: center;
-}
-
-.paper-tide {
-  position: absolute;
-  top: 5%;
-  bottom: 4%;
-  width: min(32vw, 22rem);
-  opacity: 0.72;
-}
-
-.paper-tide-left {
-  left: -8rem;
-  background: linear-gradient(90deg, rgb(251 252 248 / 0.58), transparent);
-}
-
-.paper-tide-right {
-  right: -8rem;
-  background: linear-gradient(270deg, rgb(251 252 248 / 0.56), transparent);
-}
-
-.ink-release {
-  position: absolute;
-  top: 11%;
-  bottom: 11%;
-  width: min(50vw, 34rem);
-  opacity: 0;
-  background:
-    repeating-linear-gradient(95deg, rgb(31 36 32 / 0.13) 0 2px, transparent 2px 18px),
-    linear-gradient(90deg, rgb(31 36 32 / 0.22), transparent);
-  transition:
-    opacity 180ms ease,
-    transform 620ms cubic-bezier(0.2, 0.8, 0.18, 1);
-}
-
-.ink-release.is-active {
-  opacity: 1;
-}
-
-.ink-release.is-left {
-  left: -22rem;
-  transform: translateX(-8rem) skewX(-9deg);
-}
-
-.ink-release.is-right {
-  right: -22rem;
-  transform: translateX(8rem) skewX(9deg);
-}
-
-.kawazu-stage.is-choosing-left .paper-tide-left,
-.kawazu-stage.is-choosing-right .paper-tide-right {
-  animation: paper-pull 720ms cubic-bezier(0.22, 0.72, 0.18, 1);
 }
 
 .paper-shadow {
@@ -308,22 +218,6 @@ body::before {
   to {
     opacity: 0;
     transform: translate3d(calc(var(--text-exit-x) * -1), var(--text-exit-y), 0) rotate(var(--text-exit-rotate-left));
-  }
-}
-
-@keyframes paper-pull {
-  0% {
-    opacity: 0.72;
-    transform: translateX(0);
-  }
-
-  42% {
-    opacity: 0.96;
-  }
-
-  100% {
-    opacity: 0.72;
-    transform: translateX(1.35rem);
   }
 }
 
