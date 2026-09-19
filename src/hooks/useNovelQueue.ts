@@ -5,6 +5,30 @@ import { useBooks } from '@/contexts/BookContext';
 import { fetchNovel, fetchNovels } from '@/lib/api';
 import type { Book } from '@/lib/books';
 
+const MINIMUM_QUEUE_SIZE = 2;
+const REFILL_BATCH_SIZE = 4;
+const REFILL_ATTEMPTS = 3;
+
+function waitForRetry(signal: AbortSignal, delayMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(finish, delayMs);
+
+    function finish() {
+      signal.removeEventListener('abort', abort);
+      resolve();
+    }
+
+    function abort() {
+      window.clearTimeout(timeout);
+      signal.removeEventListener('abort', abort);
+      reject(new DOMException('Aborted', 'AbortError'));
+    }
+
+    if (signal.aborted) abort();
+    else signal.addEventListener('abort', abort, { once: true });
+  });
+}
+
 export function useNovelQueue() {
   const { queuedBooks, setQueuedBooks, likedBooks, favoriteBooks, isHydrated } = useBooks();
   const [isFetching, setIsFetching] = useState(false);
@@ -39,20 +63,34 @@ export function useNovelQueue() {
       }
       return fresh.length;
     };
+    let sawRequestFailure = false;
     try {
-      if (queue.current.length === 0) {
-        // Render the first usable work before asking for the rest of the queue.
-        for (let attempt = 0; attempt < 3 && queue.current.length === 0; attempt++) {
-          append([await fetchNovel(controller.signal)]);
+      for (let attempt = 0; attempt < REFILL_ATTEMPTS && queue.current.length < MINIMUM_QUEUE_SIZE; attempt++) {
+        try {
+          append(await fetchNovels(REFILL_BATCH_SIZE, controller.signal));
+        } catch {
+          // A warm single-item cache can still answer when a batch request hits
+          // a cold serverless instance. Try one item before backing off.
+          try {
+            append([await fetchNovel(controller.signal)]);
+          } catch {
+            sawRequestFailure = true;
+          }
+        }
+
+        if (queue.current.length < MINIMUM_QUEUE_SIZE && attempt < REFILL_ATTEMPTS - 1) {
+          await waitForRetry(controller.signal, 300 * (attempt + 1));
         }
       }
-      let added = 0;
-      for (let attempt = 0; attempt < 2 && added === 0; attempt++) {
-        added += append(await fetchNovels(3, controller.signal));
+      if (queue.current.length === 0 && !controller.signal.aborted) {
+        setError(sawRequestFailure
+          ? '作品を読み込めませんでした。少し待ってから、もう一度お試しください。'
+          : 'まだ読んでいない作品が見つかりませんでした。もう一度探せます。');
       }
-      if (!added && !controller.signal.aborted) setError('まだ読んでいない作品が見つかりませんでした。もう一度探せます。');
     } catch {
-      if (!controller.signal.aborted) setError('作品を読み込めませんでした。少し待ってから、もう一度お試しください。');
+      if (!controller.signal.aborted && queue.current.length === 0) {
+        setError('作品を読み込めませんでした。少し待ってから、もう一度お試しください。');
+      }
     } finally {
       if (pending.current === controller) {
         pending.current = null;

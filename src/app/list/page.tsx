@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ArrowUpRight, Bookmark, Library, Search, Trash2 } from 'lucide-react';
 import { useBooks } from '@/contexts/BookContext';
 import { searchBooks, type Book, type Shelf } from '@/lib/books';
 
@@ -22,13 +23,13 @@ export default function ListPage() {
     setLastChange(null);
   };
   return <div className="library-page">
-    <div className="library-heading"><h1>栞と本棚</h1></div>
+    <div className="library-heading"><div><span className="section-index" aria-hidden="true">02</span><h1>思い出す</h1></div><span className="library-caption">栞と本棚</span></div>
     <div className="library-toolbar">
       <div className="shelf-tabs" role="group" aria-label="保存先">
-        <button type="button" aria-pressed={activeTab === 'liked'} onClick={() => setActiveTab('liked')}>栞 <span>{likedBooks.length}</span></button>
-        <button type="button" aria-pressed={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')}>本棚 <span>{favoriteBooks.length}</span></button>
+        <button type="button" aria-pressed={activeTab === 'liked'} onClick={() => setActiveTab('liked')}><Bookmark size={16} strokeWidth={1.5} />栞 <span>{likedBooks.length}</span></button>
+        <button type="button" aria-pressed={activeTab === 'favorites'} onClick={() => setActiveTab('favorites')}><Library size={16} strokeWidth={1.5} />本棚 <span>{favoriteBooks.length}</span></button>
       </div>
-      <label className="search-field"><span className="sr-only">作品名・作者で検索</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="作品名・作者で検索" /></label>
+      <label className="search-field"><Search size={16} strokeWidth={1.5} /><span className="sr-only">作品名・作者で検索</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="作品名・作者で検索" /></label>
     </div>
     {lastChange && <div className="undo-notice" role="status"><span>{lastChange.message}</span><button type="button" className="text-button" onClick={undo}>取り消す</button></div>}
     {!isHydrated ? <p className="empty-state" role="status">保存した作品を読み込んでいます。</p> : filtered.length === 0 ?
@@ -41,9 +42,9 @@ export default function ListPage() {
           <span className="book-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
           <div className="book-details"><h2>{book.name}</h2><p className="book-author">{book.author}</p>
             <details className="book-excerpt"><summary>冒頭を読み返す</summary><p className="reading-text">{book.content}</p></details>
-            <div className="book-actions"><a href={book.url} target="_blank" rel="noopener noreferrer" className="read-link">本文を読む ↗<span className="sr-only">（青空文庫を新しいタブで開く）</span></a>
-              <button className="text-button" type="button" onClick={() => changeShelf(book, activeTab === 'liked' ? 'favorites' : 'liked')}>{activeTab === 'liked' ? '本棚に移す' : '栞に戻す'}</button>
-              <button className="text-button delete-button" type="button" aria-label={`${book.name}を削除`} onClick={() => changeShelf(book, null)}>削除</button>
+            <div className="book-actions"><a href={book.url} target="_blank" rel="noopener noreferrer" className="read-link">本文を読む <ArrowUpRight size={16} strokeWidth={1.5} /><span className="sr-only">（青空文庫を新しいタブで開く）</span></a>
+              <button className="text-button" type="button" onClick={() => changeShelf(book, activeTab === 'liked' ? 'favorites' : 'liked')}>{activeTab === 'liked' ? <Library size={15} strokeWidth={1.5} /> : <Bookmark size={15} strokeWidth={1.5} />}{activeTab === 'liked' ? '本棚に移す' : '栞に戻す'}</button>
+              <button className="icon-button delete-button" type="button" title="削除" aria-label={`${book.name}を削除`} onClick={() => changeShelf(book, null)}><Trash2 size={16} strokeWidth={1.5} /></button>
             </div>
           </div>
         </article>)}</div>

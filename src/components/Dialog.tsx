@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 
 export default function Dialog({ open, onClose, title, children }: {
   open: boolean; onClose: () => void; title: string; children: ReactNode;
@@ -27,7 +28,7 @@ export default function Dialog({ open, onClose, title, children }: {
         const rect = event.currentTarget.getBoundingClientRect();
         if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) onClose();
       }}>
-      <div className="dialog-heading"><h2>{title}</h2><button type="button" className="text-button" onClick={onClose} autoFocus>閉じる</button></div>
+      <div className="dialog-heading"><h2>{title}</h2><button type="button" className="icon-button" title="閉じる" aria-label="閉じる" onClick={onClose} autoFocus><X size={20} strokeWidth={1.5} /></button></div>
       {children}
     </dialog>
   );

@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { BookOpen, Library, CircleHelp, Type } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
 import { type AppFont, FONT_OPTIONS, type TextSize, useDisplay } from '@/contexts/DisplayContext';
 import { useBooks } from '@/contexts/BookContext';
 import HelpModal from './HelpModal';
@@ -10,6 +12,7 @@ import Dialog from './Dialog';
 
 export default function Header() {
   const pathname = usePathname();
+  const reducedMotion = useReducedMotion();
   const { font, setFont, textSize, setTextSize, preferenceError } = useDisplay();
   const { likedBooks, favoriteBooks, storageError } = useBooks();
   const [panel, setPanel] = useState<'help' | 'display' | null>(null);
@@ -18,14 +21,14 @@ export default function Header() {
     <a className="skip-link" href="#main-content">本文へ移動</a>
     <header className="site-header">
       <nav className="header-inner" aria-label="メインナビゲーション">
-        <Link href="/" className="wordmark" aria-label="kawazu ホーム">kawazu</Link>
+        <Link href="/" className="wordmark" aria-label="kawazu ホーム">kawazu<span className="brand-seal" aria-hidden="true">文</span></Link>
         <div className="main-links">
-          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}>読む</Link>
-          <Link href="/list" aria-current={pathname === '/list' ? 'page' : undefined}>栞{count > 0 && <span className="nav-count">{count}</span>}</Link>
+          <Link href="/" aria-current={pathname === '/' ? 'page' : undefined}><BookOpen size={16} strokeWidth={1.5} /><span>出会う</span>{pathname === '/' && <motion.span className="nav-indicator" layoutId="main-navigation" aria-hidden="true" transition={{ duration: reducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }} />}</Link>
+          <Link href="/list" aria-current={pathname === '/list' ? 'page' : undefined}><Library size={16} strokeWidth={1.5} /><span>思い出す</span>{count > 0 && <span className="nav-count">{count}</span>}{pathname === '/list' && <motion.span className="nav-indicator" layoutId="main-navigation" aria-hidden="true" transition={{ duration: reducedMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }} />}</Link>
         </div>
         <div className="header-tools">
-          <button className="icon-button font-button" type="button" aria-label="文字の設定" aria-haspopup="dialog" onClick={() => setPanel('display')}>字</button>
-          <button className="icon-button" type="button" aria-label="使い方" aria-haspopup="dialog" onClick={() => setPanel('help')}>?</button>
+          <button className="icon-button" type="button" title="文字の設定" aria-label="文字の設定" aria-haspopup="dialog" onClick={() => setPanel('display')}><Type size={19} strokeWidth={1.5} /></button>
+          <button className="icon-button help-button" type="button" title="使い方" aria-label="使い方" aria-haspopup="dialog" onClick={() => setPanel('help')}><CircleHelp size={18} strokeWidth={1.5} /></button>
         </div>
       </nav>
     </header>
